@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from math import pi, sin, exp
 import scipy.constants as sp
-import doctest
+
 
 class FDTD:
     def __init__(self, mesh, pulse, time):
@@ -95,13 +95,8 @@ class Utilities:
 
     def FFT(self,e1tk1,e2tk1,e1tk2,e2tk2):
         
-        """Devuelve la transformada de fourier
-
-        >>> Utilities().FFT(e1tk1,e2tk1,e1tk2,e2tk2)
-        True
-        """  
         #Hay que cancelar la parte incidente
-        e1tk1 = e1tk1 - e2tk1
+        e1tk1 = e1tk1 - e2tk1  
         
         e1wk1=np.fft.fft(e1tk1)
         e2wk1=np.fft.fft(e2tk1)
@@ -128,4 +123,3 @@ class Utilities:
 
         return freq
 
-#doctest.testmod()   

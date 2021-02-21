@@ -2,7 +2,7 @@ from mesh import Mesh
 from solver import FDTD, Utilities, Source
 from viewer import Animator
 import copy
-import doctest
+
 
 
 
@@ -30,5 +30,3 @@ freq=Utilities().frequency(5e-9,et1k1)
 
 Animator().fftgraph(freq,r,t)
 
-
-doctest.testfile("solver.py")
