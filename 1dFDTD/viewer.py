@@ -48,7 +48,7 @@ class Animator:
         plt.plot(freq,r, label='R')
         plt.plot(freq,t, label='T')
 
-
+        plt.xlim(0, 5e9)
         plt.xlabel('Frequency w')
         plt.ylabel('R&T')
         plt.title('Reflected and transmitted E in frequency domain')

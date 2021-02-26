@@ -43,11 +43,11 @@ class FDTD:
             ex[1:-1] = ca * ex[1:-1] + cb * (hy[:-2] - hy[1:-1])
             
             #Guardo los valores a representar
-            #ex_save_film[time_step][:]=copy.deepcopy(ex[:])
+            #ex_save_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
-            ex_save_k1[time_step]=copy.deepcopy(ex[k1])
-            ex_save_k2[time_step]=copy.deepcopy(ex[k2])
+            ex_save_k1[time_step]=ex[k1]
+            ex_save_k2[time_step]=ex[k2]
            
             ex[self.pulse.k_ini] +=  0.5*self.pulse.pulse(time_step) 
             
@@ -91,12 +91,12 @@ class Source:
 # COMENTAR: Cuanto menos estado, mejor
 class Utilities:
 
-    def FFT(self,e1tk1,e2tk1,e1tk2,e2tk2):
+    def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2):
         
         #Hay que cancelar la parte incidente
-        e1tk1 = e1tk1 - e2tk1  
+        e1tk1_reflected = e1tk1_total - e2tk1  
         
-        e1wk1=np.fft.fft(e1tk1)
+        e1wk1=np.fft.fft(e1tk1_reflected)
         e2wk1=np.fft.fft(e2tk1)
 
         e1wk2=np.fft.fft(e1tk2)
@@ -104,7 +104,8 @@ class Utilities:
     
         R=np.abs(e1wk1) / np.abs(e2wk1)
         T=np.abs(e1wk2) / np.abs(e2wk2)
-
+        
+        
         return  R, T
     
 
