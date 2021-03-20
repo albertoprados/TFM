@@ -45,8 +45,9 @@ class Animator:
         self.r=r
         self.t=t
         
-        plt.plot(freq,r, label='R')
-        plt.plot(freq,t, label='T')
+        plt.plot(freq,r*r, label='R')
+        plt.plot(freq,t*t, label='T')
+        plt.plot(freq,r*r+t*t, label='T')
 
         plt.xlim(0, 5e9)
         plt.xlabel('Frequency w')

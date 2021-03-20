@@ -8,7 +8,7 @@ import copy
 
 
 
-malla1=Mesh(200,0.001,4,0,110,140)
+malla1=Mesh(200,0.001,4,0.04,110,140)
 malla2=Mesh(200,0.001,1,0,110,140)
 pulso=Source('gauss',40,12,20)
 
