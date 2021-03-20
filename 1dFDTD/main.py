@@ -21,8 +21,8 @@ e2tk2= FDTD(malla2,pulso,5e-9).FDTDLoop(40,160)[1]
 #ex_film=FDTD(malla1,pulso,5e-9).FDTDLoop(40,160)[2]
 #Animator().animationex(ex_film,malla1)
 
-r= Utilities().FFT(et1k1,e2tk1,et1k2,e2tk2)[1]
-t= Utilities().FFT(et1k1,e2tk1,et1k2,e2tk2)[2]
+r= Utilities().FFT(et1k1,e2tk1,et1k2,e2tk2)[0]
+t= Utilities().FFT(et1k1,e2tk1,et1k2,e2tk2)[1]
 freq=Utilities().frequency(5e-9,et1k1)
 
 

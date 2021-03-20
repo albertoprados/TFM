@@ -10,12 +10,12 @@ class FDTD:
         self.pulse=pulse
         self.time=time
 
-    def boundarymur(self, ex, bl, bh): 
-        ex[0] = bl.pop(0)
-        bl.append(ex[1])      
+    def boundarymur(self, ex, boundary_low, boundary_high): 
+        ex[0] = boundary_low.pop(0)
+        boundary_low.append(ex[1])      
 
-        ex[self.mesh.ncells] = bh.pop(0)
-        bh.append(ex[self.mesh.ncells-1])
+        ex[self.mesh.ncells] = boundary_high.pop(0)
+        boundary_high.append(ex[self.mesh.ncells-1])
 
 
     def FDTDLoop(self,k1,k2):
@@ -35,27 +35,25 @@ class FDTD:
         ca=self.mesh.material()[0][1:-1]
         cb=self.mesh.material()[1][1:-1]
 
-        bl = [0, 0]
-        bh = [0, 0]
+        boundary_low = [0, 0]
+        boundary_high = [0, 0]
        
         for time_step in range(1, nsteps + 1):
 
-            # Calculate the Ex field, for cycle using slice notation
             ex[1:-1] = ca * ex[1:-1] + cb * (hy[:-2] - hy[1:-1])
             
             #Guardo los valores a representar
-            #ex_save_film[time_step][:]=copy.deepcopy(ex[:])
+            #ex_save_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
-            ex_save_k1[time_step]=copy.deepcopy(ex[k1])
-            ex_save_k2[time_step]=copy.deepcopy(ex[k2])
+            ex_save_k1[time_step]=ex[k1]
+            ex_save_k2[time_step]=ex[k2]
            
             ex[self.pulse.k_ini] +=  0.5*self.pulse.pulse(time_step) 
             
-            #Condiciones de contorno
-            self.boundarymur(ex,bl,bh)  
+            self.boundarymur(ex,boundary_low,boundary_high)  
             
-            # Update h field
+            
             hy[:-1] = hy[:-1] + 0.5 * (ex[:-1] - ex[1:])   
 
             t= time_step+1/2
@@ -93,12 +91,12 @@ class Source:
 # COMENTAR: Cuanto menos estado, mejor
 class Utilities:
 
-    def FFT(self,e1tk1,e2tk1,e1tk2,e2tk2):
+    def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2):
         
         #Hay que cancelar la parte incidente
-        e1tk1 = e1tk1 - e2tk1  
+        e1tk1_reflected = e1tk1_total - e2tk1  
         
-        e1wk1=np.fft.fft(e1tk1)
+        e1wk1=np.fft.fft(e1tk1_reflected)
         e2wk1=np.fft.fft(e2tk1)
 
         e1wk2=np.fft.fft(e1tk2)
@@ -106,13 +104,9 @@ class Utilities:
     
         R=np.abs(e1wk1) / np.abs(e2wk1)
         T=np.abs(e1wk2) / np.abs(e2wk2)
-
-        if all(i < 1 for i in R):
-            boolvar= True
-        else:
-            boolvar= False
-
-        return boolvar, R, T
+        
+        
+        return  R, T
     
 
     def frequency(self,time,e1tk1):
@@ -123,4 +117,3 @@ class Utilities:
 
         return freq
 
-#Comentario de Prueba
