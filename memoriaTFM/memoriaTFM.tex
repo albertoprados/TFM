@@ -109,6 +109,8 @@
 \usepackage[]{bm}
 \usepackage[]{thmtools}
 \usepackage{braket}
+\usepackage{accents}
+\newcommand{\ubar}[1]{\underaccent{\bar}{#1}}
 
 \newcommand{\marcador}{\vrule height 10pt depth 2pt width 2pt \hskip .5em\relax}
 \newcommand{\cabeceraespecial}{%
@@ -280,7 +282,7 @@ One dimensional Maxwell's equations, in free space, are reduced to:
 & \frac{\partial H_y}{\partial t}=-\frac{1}{\mu_0} \frac{\partial E_x}{\partial z}.
 \end{align}
 
-These equations are those of a plane wave propagating in the $z$ direction with the electric field in the $x$ direction and the magnetic field oriented in the $y$ direction. Using the central difference approximation in the spatial and time derivatives, the following form of the equations is obtanied:
+These equations are those of a plane wave propagating in the $z$ direction with the electric field in the $x$ direction and the magnetic field oriented in the $y$ direction. Using the central difference approximation in the spatial and time derivatives, the following form of the equations is obtained:
 
 \begin{align}
  \frac{E_x^{n+\frac{1}{2}}(k)-E_x^{n-\frac{1}{2}}(k)}{\Delta t}=-\frac{1}{\epsilon_0}\frac{H_y^n \left(k+\frac{1}{2}\right) - H_y^n\left(k-\frac{1}{2}\right)}{\Delta x} \\
@@ -294,23 +296,34 @@ These equations are those of a plane wave propagating in the $z$ direction with 
 \subsection{Propagation in a lossy dielectric medium.}
 
 
-
-\chapter{Stability in the FDTD method.}
-Courant condition.
+\section{Numerical Dispersion.}
+[Book EM simulation techniques based on the FDTD method]
+\section{Stability in the FDTD method.}
+Courant condition.[Book EM simulation techniques based on the FDTD method]
 
 
 \chapter{Source types (Hard source/Soft Source).}
 
 
+\chapter{Stochastic FDTD.}
+\section{Introduction to the S-FDTD method.}
+In the FDTD simulations considered in this work until this point, the values of the permittivity and conductivity used were the average values of the materials and therefore the values of the fields obtained were also their average values. However, materials are statistically variable and this have to be considered since the fields obtained will also vary statistically. \\
+As explained in the last paragraph [Stochastic FDTD for analysis of Statistical Variation in EM], a method is needed to compute these statistical quantities such as variance or standard variation. \\
+The classical method used to compute the statistical properties is the Monte Carlo method [PereColet], but this method comes under one big issue, it requires a huge number of simulations with properties selected at random.
+Now, the Stochastic FDTD (S-FDTD) method is presented which provides a estimate of the mean and variation of the fields at every point in space and time. \\
+The usual FDTD equations adapted in pseudo code format (equation number) are complemented with additional equations to compute the standard deviation. Previously, the electrical properties $\epsilon_r$, $\ubar{\sigma}$ (where the symbol for conductivity has been changed to avoid confusion with the standard deviation) were the average values. \\
+So the equations (1y2 en[S-FDTD]) must be thought as stochastic equations with four random variables, namely $E_x$, $H_y$, $\epsilon_r$ and $\ubar{\sigma}$.
+\section{Mean Field Values}
+The delta method [Delta method] will be the tool used to compute the mean and variance of the fields. Take a function of stochastic variables and expand it in Taylor's series, next apply the expectation operator and neglect higher order terms getting the following expression for the expectation [S-FDTD]:
+\begin{equation}
+E\lbrace g(x_1,x_2,...,x_n)\rbrace \approx g(\mu_{x_1},\mu_{x_2},...,\mu_{x_n}).
+\end{equation}
+This equation tells that the expectation of the fields is obtained using the average of the variables in the fields equations(1y2). Therefore in the S-FDTD method the fields $E_x$ and $H_y$ will be the same as in the traditional FDTD scheme.
+\section{Variance of H fields}
+\section{Variance of E fields}
 
-
-
-
-
-
-
-
-
+\section{MPI implementation}
+MPI is a library used for parallel processing [Book EM simulation techniques based on the FDTD method]
 
 
 
