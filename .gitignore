@@ -1,5 +1,5 @@
-1dFDTD/.vscode/
-1dFDTD/__pycache__/
+*/*.pyc
+.vscode/
 memoriaTFM/memoriaTFM.aux
 memoriaTFM/memoriaTFM.log
 memoriaTFM/memoriaTFM.pdf
