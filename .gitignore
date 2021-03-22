@@ -1,0 +1,7 @@
+.vscode/
+fdtd/__pycache__/
+memoriaTFM/memoriaTFM.aux
+memoriaTFM/memoriaTFM.log
+memoriaTFM/memoriaTFM.pdf
+memoriaTFM/memoriaTFM.synctex.gz
+memoriaTFM/memoriaTFM.toc
