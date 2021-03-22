@@ -1,36 +1,41 @@
 import numpy as np
 import copy
-from math import pi, sin, exp
+import math
 import scipy.constants as sp
 
 
 class FDTD:
-    def __init__(self, mesh, pulse, time):
+    def __init__(self, mesh, pulse, var):
         self.mesh=mesh
         self.pulse=pulse
-        self.time=time
+        self.var=var
 
     def boundarymur(self, ex, boundary_low, boundary_high): 
         ex[0] = boundary_low.pop(0)
         boundary_low.append(ex[1])      
 
-        ex[self.mesh.ncells] = boundary_high.pop(0)
-        boundary_high.append(ex[self.mesh.ncells-1])
+        ex[self.var.ncells] = boundary_high.pop(0)
+        boundary_high.append(ex[self.var.ncells-1])
+
+    """
+    def Include_S_FDTD_Analysis(self):
+        dw
+    """
 
 
-    def FDTDLoop(self,k1,k2):
+    def FDTDLoop(self):
         
-        dt=self.mesh.ddx / (2*sp.c)
-        nsteps= int(self.time  / dt)
+        dt=self.var.dt()
+        nsteps= int(self.var.time / dt)
 
         # COMENTAR: Mejor quitar nsteps, no guardar siempre todo...
-        ex=np.zeros(self.mesh.ncells+1)
-        hy=np.zeros(self.mesh.ncells+1)
+        ex=np.zeros(self.var.ncells+1)
+        hy=np.zeros(self.var.ncells+1)
         
         ex_save_k1=np.empty(nsteps+1)
         ex_save_k2=np.empty(nsteps+1)
 
-        #ex_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
+        #ex_save_film=np.empty((nsteps+1,self.var.ncells+1))
         
         ca=self.mesh.material()[0][1:-1]
         cb=self.mesh.material()[1][1:-1]
@@ -46,10 +51,10 @@ class FDTD:
             #ex_save_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
-            ex_save_k1[time_step]=ex[k1]
-            ex_save_k2[time_step]=ex[k2]
+            ex_save_k1[time_step]=ex[self.var.FFTpoints()[0]]
+            ex_save_k2[time_step]=ex[self.var.FFTpoints()[1]]
            
-            ex[self.pulse.k_ini] +=  0.5*self.pulse.pulse(time_step) 
+            ex[self.pulse.k_ini] +=  0.5* self.pulse.pulse(time_step) 
             
             self.boundarymur(ex,boundary_low,boundary_high)  
             
@@ -57,8 +62,8 @@ class FDTD:
             hy[:-1] = hy[:-1] + 0.5 * (ex[:-1] - ex[1:])   
 
             t= time_step+1/2
-            hy[self.pulse.k_ini] += 0.25* self.pulse.pulse(t) 
-            hy[self.pulse.k_ini-1] += 0.25* self.pulse.pulse(t)   
+            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
+            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
 
                        
 
@@ -66,54 +71,60 @@ class FDTD:
 
 
 
+class Stochastic_FDTD:
+    def __init__(self, var1, var2):
+        self.var1=var1
+        self.var2=var2
 
-class Source:
-    def __init__(self, sourcetype, t_0, s_0, k_ini):
-        self.sourcetype=sourcetype
-        self.t_0=t_0
-        self.s_0=s_0
-        self.k_ini=k_ini
+    def StandardDeviation_H(self,std_h,std_e):
+        std_h[:-1] = std_h[:-1] - 0.5 * (std_e[:-1] - std_e[1:])
 
-    def pulse(self, time):
-        
-        self.time=time
-        
-        if self.sourcetype == 'gauss':
-            pulse = exp(-0.5*( (self.t_0 - time) / self.s_0 )**2)
-        
-        return pulse
+        return std_h
 
+    def StandardDeviation_E(self,std_h,std_e,e,h):   
+        std_e[1:-1]=self.c1_StDe * std_e[1:-1] + \
+                    self.c2_StDe * (std_h[1:-1] - std_h[:-2]) + \
+                    self.c3_StDe * e[1:-1] + \
+                    self.c4_StDe * (h[:-2] - h[1:-1])     
 
+        return std_e
 
+    def coef_aux(self):
+        return 2 * sp.epsilon_0 * self.var1.epsilon_r + \
+               self.var1.dt() * self.var1.sigma
 
-#Clase para la Trasformada Rápida de Fourier
-# COMENTAR: Esto es mas un namespace que una clase. 
-# COMENTAR: Cuanto menos estado, mejor
-class Utilities:
+    def c1_StDe(self):
+        c1_StDe=( (2 * sp.epsilon_0 * self.var1.epsilon_r - \
+                 self.var1.dt() * self.var1.sigma) \
+                 / self.coef_aux) * math.sqrt(sp.mu_0 / sp.epsilon_0)  
 
-    def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2):
-        
-        #Hay que cancelar la parte incidente
-        e1tk1_reflected = e1tk1_total - e2tk1  
-        
-        e1wk1=np.fft.fft(e1tk1_reflected)
-        e2wk1=np.fft.fft(e2tk1)
-
-        e1wk2=np.fft.fft(e1tk2)
-        e2wk2=np.fft.fft(e2tk2)
+        return c1_StDe
     
-        R=np.abs(e1wk1) / np.abs(e2wk1)
-        T=np.abs(e1wk2) / np.abs(e2wk2)
-        
-        
-        return  R, T
-    
+    def c2_StDe(self):
+        return 1.0 / (sp.c * self.coef_aux)
 
-    def frequency(self,time,e1tk1):
+    def c3_StDe(self):
+        c3_StDe=4*self.var1.dt()*\
+                (self.var1.sigma*self.var2.c_eps_E*self.var2.std_eps-\
+                 self.var1.epsilon_r*self.var2.c_sigma_E*self.var2.std_sigma)\
+               / (sp.c * math.pow(self.coef_aux,2))
 
-        N=len(e1tk1)
+        return c3_StDe
 
-        freq= (1.0/time) * np.arange(N)         
+    def c4_StDe(self):
+        c4_StDe=(1.0/(sp.c*self.coef_aux))*((2*sp.epsilon_0*self.var2.std_eps*\
+                 self.var2.c_eps_H + self.var1.dt()*self.var2.std_sigma * \
+                 self.var2.c_sigma_H)/self.coef_aux)
 
-        return freq
+        return c4_StDe
+
+               
+
+
+
+
+
+
+
+
 

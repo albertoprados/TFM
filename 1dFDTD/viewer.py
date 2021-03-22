@@ -1,13 +1,14 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
-
+from matplotlib import rc
 
 class Animator:
 
-    def animationex(self, exanimation, malla):
+    def animationex(self, exanimation, malla,var):
         self.exanimation=exanimation
         self.malla=malla
+        self.var=var
 
         cb=malla.material()[1]
        
@@ -26,9 +27,9 @@ class Animator:
         plt.plot((0.5 / cb - 1) / 3, 'k--',
                  linewidth=0.75) # The math on cb is just for scaling
 
-        plt.text(170, 0.5, 'Eps = {}'.format(malla.epsilon_r),
+        plt.text(170, 0.5, 'Eps = {}'.format(var.epsilon_r),
                 horizontalalignment='center')
-        plt.text(170, -0.5, 'Cond = {}'.format(malla.sigma),
+        plt.text(170, -0.5, 'Cond = {}'.format(var.sigma),
                 horizontalalignment='center')
         plt.xlabel('FDTD cells')
 
@@ -44,12 +45,17 @@ class Animator:
         self.freq=freq
         self.r=r
         self.t=t
-        
+
+        #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+        #rc('text', usetex=True)
+
         plt.plot(freq,r*r, label='R')
         plt.plot(freq,t*t, label='T')
-        plt.plot(freq,r*r+t*t, label='T')
+        plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
+        plt.ylim(0,2)
         plt.xlim(0, 5e9)
+        
         plt.xlabel('Frequency w')
         plt.ylabel('R&T')
         plt.title('Reflected and transmitted E in frequency domain')
