@@ -5,10 +5,11 @@ import scipy.constants as sp
 
 
 class FDTD:
-    def __init__(self, mesh, pulse, var):
+    def __init__(self, mesh, pulse, var, svar):
         self.mesh=mesh
         self.pulse=pulse
         self.var=var
+        self.svar=svar
 
     def boundarymur(self, ex, boundary_low, boundary_high): 
         ex[0] = boundary_low.pop(0)
@@ -18,19 +19,23 @@ class FDTD:
         boundary_high.append(ex[self.var.ncells-1])
 
     """
-    def Include_S_FDTD_Analysis(self):
-        dw
+    def Include_SFDTD_Analysis(self,std_h,std_e,e,h):
+        self.sfdtd.StandardDeviation_E(std_h,std_e,e,h)
+        self.sfdtd.StandardDeviation_H(std_h,std_e)
     """
-
+    
 
     def FDTDLoop(self):
         
         dt=self.var.dt()
         nsteps= int(self.var.time / dt)
 
-        # COMENTAR: Mejor quitar nsteps, no guardar siempre todo...
+        #Def
         ex=np.zeros(self.var.ncells+1)
         hy=np.zeros(self.var.ncells+1)
+
+        std_e=np.zeros(self.var.ncells+1)
+        std_h=np.zeros(self.var.ncells+1)
         
         ex_save_k1=np.empty(nsteps+1)
         ex_save_k2=np.empty(nsteps+1)
@@ -61,13 +66,18 @@ class FDTD:
             
             hy[:-1] = hy[:-1] + 0.5 * (ex[:-1] - ex[1:])   
 
+            Stochastic_FDTD(self.var,self.svar).StandardDeviation_E(std_h,std_e,ex,hy)
+            Stochastic_FDTD(self.var,self.svar).StandardDeviation_H(std_h,std_e)
+
             t= time_step+1/2
             hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
             hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
 
-                       
+            
 
-        return ex_save_k1, ex_save_k2,  #ex_save_film
+
+        return ex_save_k1, ex_save_k2, std_h, std_e #ex_save_film
+
 
 
 
@@ -79,44 +89,42 @@ class Stochastic_FDTD:
     def StandardDeviation_H(self,std_h,std_e):
         std_h[:-1] = std_h[:-1] - 0.5 * (std_e[:-1] - std_e[1:])
 
-        return std_h
-
+    
     def StandardDeviation_E(self,std_h,std_e,e,h):   
-        std_e[1:-1]=self.c1_StDe * std_e[1:-1] + \
-                    self.c2_StDe * (std_h[1:-1] - std_h[:-2]) + \
-                    self.c3_StDe * e[1:-1] + \
-                    self.c4_StDe * (h[:-2] - h[1:-1])     
+        std_e[1:-1]=self.c1_StDe() * std_e[1:-1] + \
+                    self.c2_StDe() * (std_h[1:-1] - std_h[:-2]) + \
+                    self.c3_StDe() * e[1:-1] + \
+                    self.c4_StDe() * (h[:-2] - h[1:-1])     
 
-        return std_e
 
     def coef_aux(self):
         return 2 * sp.epsilon_0 * self.var1.epsilon_r + \
                self.var1.dt() * self.var1.sigma
 
     def c1_StDe(self):
-        c1_StDe=( (2 * sp.epsilon_0 * self.var1.epsilon_r - \
-                 self.var1.dt() * self.var1.sigma) \
-                 / self.coef_aux) * math.sqrt(sp.mu_0 / sp.epsilon_0)  
+        c1=( (2 * sp.epsilon_0 * self.var1.epsilon_r - \
+            self.var1.dt() * self.var1.sigma) \
+            / self.coef_aux()) * math.sqrt(sp.mu_0 / sp.epsilon_0)  
 
-        return c1_StDe
+        return c1
     
     def c2_StDe(self):
-        return 1.0 / (sp.c * self.coef_aux)
+        return 1.0 / (sp.c * self.coef_aux())
 
     def c3_StDe(self):
-        c3_StDe=4*self.var1.dt()*\
-                (self.var1.sigma*self.var2.c_eps_E*self.var2.std_eps-\
-                 self.var1.epsilon_r*self.var2.c_sigma_E*self.var2.std_sigma)\
-               / (sp.c * math.pow(self.coef_aux,2))
+        c3=4*self.var1.dt()*\
+           (self.var1.sigma*self.var2.c_eps_E*self.var2.std_eps-\
+            self.var1.epsilon_r*self.var2.c_sigma_E*self.var2.std_sigma)\
+            / (sp.c * math.pow(self.coef_aux(),2))
 
-        return c3_StDe
+        return c3
 
     def c4_StDe(self):
-        c4_StDe=(1.0/(sp.c*self.coef_aux))*((2*sp.epsilon_0*self.var2.std_eps*\
-                 self.var2.c_eps_H + self.var1.dt()*self.var2.std_sigma * \
-                 self.var2.c_sigma_H)/self.coef_aux)
+        c4=(1.0/(sp.c*self.coef_aux()))*((2*sp.epsilon_0*self.var2.std_eps*\
+            self.var2.c_eps_H + self.var1.dt()*self.var2.std_sigma * \
+            self.var2.c_sigma_H)/self.coef_aux())
 
-        return c4_StDe
+        return c4
 
                
 

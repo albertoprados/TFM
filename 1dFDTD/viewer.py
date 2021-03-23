@@ -63,4 +63,16 @@ class Animator:
         plt.legend()
         plt.show()
     
+    def standard_deviation(self, std_e, std_h):
+        self.std_e=std_e
+        self.std_h=std_h
+
+        #dom=len(std_e)
+
+        plt.plot(std_e,label='std_e')
+        plt.plot(std_h,label='std_h')
+
+        plt.legend()
+        plt.show()
+
    
