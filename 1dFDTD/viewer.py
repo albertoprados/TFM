@@ -5,10 +5,10 @@ from matplotlib import rc
 
 class Animator:
 
-    def animationex(self, exanimation, malla,var):
+    def animationex(self, exanimation, malla):
         self.exanimation=exanimation
         self.malla=malla
-        self.var=var
+
 
         cb=malla.material()[1]
        
@@ -27,10 +27,24 @@ class Animator:
         plt.plot((0.5 / cb - 1) / 3, 'k--',
                  linewidth=0.75) # The math on cb is just for scaling
 
-        plt.text(170, 0.5, 'Eps = {}'.format(var.epsilon_r),
-                horizontalalignment='center')
-        plt.text(170, -0.5, 'Cond = {}'.format(var.sigma),
-                horizontalalignment='center')
+        try:
+            malla.parameters.shape[1]
+            num_materials=len(malla.parameters)
+        except IndexError:
+            num_materials=1
+
+        if num_materials==1:
+            plt.text(170 , 0.5, 'Eps = {}'.format(malla.parameters[0]),
+                    horizontalalignment='center')
+            plt.text(170 , -0.5, 'Cond = {}'.format(malla.parameters[1]),
+                    horizontalalignment='center')    
+        else:
+            for i in range(num_materials):
+                plt.text(170 , 0.25 + 0.2 * i, 'Eps = {}'.format(malla.parameters[i][0]),
+                    horizontalalignment='center')
+                plt.text(170 , -0.75 + 0.2 * i, 'Cond = {}'.format(malla.parameters[i][1]),
+                    horizontalalignment='center')
+        
         plt.xlabel('FDTD cells')
 
         plt.subplots_adjust(bottom=0.25, hspace=0.45)

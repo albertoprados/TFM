@@ -3,23 +3,6 @@ import scipy.constants as sp
 import math
 
 
-class Variables_FDTD:
-    def __init__(self,ncells,ddx,time,epsilon_r,sigma,start_m,end_m):
-        self.ncells=ncells
-        self.ddx=ddx
-        self.time=time
-        self.epsilon_r= epsilon_r
-        self.sigma= sigma
-        self.start_m= start_m
-        self.end_m= end_m 
-
-    def dt(self):
-        return self.ddx/(2*sp.c)    
-    
-    def FFTpoints(self):
-        return self.start_m - 20, self.end_m + 20
-
-
 class Variables_SFDTD:
     def __init__(self,std_eps,std_sigma,c_eps_E,c_sigma_E,c_eps_H,c_sigma_H):   
         self.std_eps=std_eps
@@ -28,6 +11,7 @@ class Variables_SFDTD:
         self.c_sigma_E= c_sigma_E
         self.c_eps_H= c_eps_H
         self.c_sigma_H= c_sigma_H
+
 
 
 
@@ -70,11 +54,9 @@ class Utilities:
         return  R, T
     
 
-    def frequency(self,time,e1tk1):
-        self.time=time
-        
+    def frequency(self,time,e1tk1): 
         N=len(e1tk1)
 
-        freq= (1.0/self.time.time) * np.arange(N)         
+        freq= (1.0/time) * np.arange(N)         
 
         return freq
