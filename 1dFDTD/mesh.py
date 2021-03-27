@@ -16,7 +16,7 @@ class Mesh:
         return self.ncells - 120, self.ncells - 40
 
 
-    def material(self):
+    def materials(self):
         try:
             self.parameters.shape[1]
             num_materials=len(self.parameters)
@@ -52,6 +52,7 @@ class Materials:
     def material(self,epsilon_r,sigma,start_m,end_m):
         parameters=list(locals().values())
 
+        #Avoid getting self parameter 
         material=np.empty(len(parameters)-1)
 
         for i in range(1,len(parameters)):
@@ -68,3 +69,24 @@ class Materials:
             material_matrix[i][:]=materials[i]
         
         return material_matrix
+
+    def s_material(self,std_eps,std_sigma,c_eps_E,c_sigma_E,c_eps_H,c_sigma_H):    
+        parameters=list(locals().values())
+
+        #Avoid getting self parameter 
+        stochastic_material=np.empty(len(parameters)-1)
+
+        for i in range(1,len(parameters)):
+            stochastic_material[i-1] = parameters[i]
+
+        return stochastic_material
+
+    def s_material_matrix(self, s_materials):
+        num_materials=len(s_materials)
+
+        stochastic_material_matrix=np.empty((num_materials,len(s_materials[0])))
+
+        for i in range(num_materials):
+            stochastic_material_matrix[i][:]=s_materials[i]
+        
+        return stochastic_material_matrix    

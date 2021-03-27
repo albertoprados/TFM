@@ -3,19 +3,6 @@ import scipy.constants as sp
 import math
 
 
-class Variables_SFDTD:
-    def __init__(self,std_eps,std_sigma,c_eps_E,c_sigma_E,c_eps_H,c_sigma_H):   
-        self.std_eps=std_eps
-        self.std_sigma=std_sigma
-        self.c_eps_E= c_eps_E
-        self.c_sigma_E= c_sigma_E
-        self.c_eps_H= c_eps_H
-        self.c_sigma_H= c_sigma_H
-
-
-
-
-
 class Source:
     def __init__(self, sourcetype, t_0, s_0, k_ini):
         self.sourcetype=sourcetype

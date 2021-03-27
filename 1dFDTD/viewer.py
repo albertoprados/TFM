@@ -10,7 +10,7 @@ class Animator:
         self.malla=malla
 
 
-        cb=malla.material()[1]
+        cb=malla.materials()[1]
        
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.set(xlim=(0, 200), ylim=(-1.2, 1.2))
@@ -68,7 +68,7 @@ class Animator:
         plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
         plt.ylim(0,2)
-        plt.xlim(0, 5e9)
+        plt.xlim(0, 5e10)
         
         plt.xlabel('Frequency w')
         plt.ylabel('R&T')
