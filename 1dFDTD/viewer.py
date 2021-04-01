@@ -13,7 +13,7 @@ class Animator:
         cb=malla.materials()[1]
        
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.set(xlim=(0, 200), ylim=(-1.2, 1.2))
+        ax.set(xlim=(0, 200), ylim=(-10.2, 10.2))
 
         x = np.linspace(0, 200, 201)
 
@@ -27,22 +27,12 @@ class Animator:
         plt.plot((0.5 / cb - 1) / 3, 'k--',
                  linewidth=0.75) # The math on cb is just for scaling
 
-        try:
-            malla.parameters.shape[1]
-            num_materials=len(malla.parameters)
-        except IndexError:
-            num_materials=1
 
-        if num_materials==1:
-            plt.text(170 , 0.5, 'Eps = {}'.format(malla.parameters[0]),
+        num_materials=len(malla.parameters)
+        for i in range(num_materials):
+            plt.text(170 , 0.25 + 0.2 * i, 'Eps = {}'.format(malla.parameters[i][0]),
                     horizontalalignment='center')
-            plt.text(170 , -0.5, 'Cond = {}'.format(malla.parameters[1]),
-                    horizontalalignment='center')    
-        else:
-            for i in range(num_materials):
-                plt.text(170 , 0.25 + 0.2 * i, 'Eps = {}'.format(malla.parameters[i][0]),
-                    horizontalalignment='center')
-                plt.text(170 , -0.75 + 0.2 * i, 'Cond = {}'.format(malla.parameters[i][1]),
+            plt.text(170 , -0.75 + 0.2 * i, 'Cond = {}'.format(malla.parameters[i][1]),
                     horizontalalignment='center')
         
         plt.xlabel('FDTD cells')
