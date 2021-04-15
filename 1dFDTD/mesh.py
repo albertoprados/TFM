@@ -4,12 +4,10 @@ import math
 
 
 class Mesh:
-    def __init__(self, ncells, ddx, parameters, s_parameters):    
+    def __init__(self, ncells, ddx, par):    
         self.ncells=ncells
         self.ddx=ddx
-        self.parameters=parameters
-        self.s_parameters=s_parameters
-        self.num_materials=len(parameters)
+        self.par=par
         
     def dt(self):
         return self.ddx/(2*sp.c)    
@@ -19,130 +17,182 @@ class Mesh:
 
 
     def materials(self):
-        
-
-        eaf = np.empty(self.num_materials)
+        eaf = np.empty(self.par.num_materials)
         ca = np.ones(self.ncells+1)
         cb = np.ones(self.ncells+1) * 0.5
-       
-        for i in range(self.num_materials):     
-            eaf[i] = self.dt() * self.parameters[i][1] \
-                    /(2 * sp.epsilon_0 * self.parameters[i][0]) 
-            ca[int(self.parameters[i][2]) : int(self.parameters[i][3])] = \
+
+        #(self.dt()/(self.ddx * sp.epsilon_0))
+
+        for i in range(self.par.num_materials):     
+            eaf[i] = self.dt() * self.par.sigma()[i] \
+                    /(2 * sp.epsilon_0 * self.par.epsilon_r()[i]) 
+            ca[self.par.start_m()[i] : self.par.end_m()[i]] = \
                     (1 - eaf[i] ) / (1 + eaf[i] )
-            cb[int(self.parameters[i][2]) : int(self.parameters[i][3])] = \
-                    0.5 / (self.parameters[i][0] * (1 + eaf[i] ))
+            cb[self.par.start_m()[i] : self.par.end_m()[i]] = \
+                    0.5 / (self.par.epsilon_r()[i] * (1 + eaf[i] ))
        
-        
         return  ca, cb
 
-
+    
 
     def coef_aux(self):
-        c_aux = np.empty(self.num_materials)
+        c_aux = np.empty(self.par.num_materials)
 
-        for i in range(self.num_materials):     
-            c_aux[i] = 2 * sp.epsilon_0 * self.parameters[i][0] + \
-                self.dt() * self.parameters[i][1]   
+        for i in range(self.par.num_materials):     
+            c_aux[i] = 2 * sp.epsilon_0 * self.par.epsilon_r()[i] + \
+                self.dt() * self.par.sigma()[i]   
         
         return c_aux
 
+
     def c1_StDe(self):
-        c1_coef = np.empty(self.num_materials)
+        c1_coef = np.empty(self.par.num_materials)
         c1_malla = np.ones(self.ncells+1)
 
+        for i in range(self.par.num_materials):
+            c1_coef[i] = ( (2 * sp.epsilon_0 * self.par.epsilon_r()[i] - \
+                self.dt() * self.par.sigma()[i]) \
+                / self.coef_aux()[i] ) 
+                
 
-        for i in range(self.num_materials):
-            c1_coef[i] = ( (2 * sp.epsilon_0 * self.parameters[i][0] - \
-                self.dt() * self.parameters[i][1]) \
-                / self.coef_aux()[i] ) \
-                * math.sqrt(sp.mu_0 / sp.epsilon_0) 
-
-            c1_malla[int(self.parameters[i][2]) : int(self.parameters[i][3])]= c1_coef[i]    
+            c1_malla[self.par.start_m()[i] : self.par.end_m()[i]]= c1_coef[i]    
                              
         return c1_malla
     
+
     def c2_StDe(self):
-        c2_coef = np.empty(self.num_materials)
-        c2_malla = np.ones(self.ncells+1) * 0.5 * math.sqrt(sp.mu_0 / sp.epsilon_0)
+        c2_coef = np.empty(self.par.num_materials)
+        c2_malla = np.ones(self.ncells+1) * (self.dt()/self.ddx*sp.epsilon_0) \
+                * math.sqrt(sp.epsilon_0/sp.mu_0)
 
-        for i in range(self.num_materials): 
-            c2_coef[i]= 1.0 / (sp.c * self.coef_aux()[i]) 
+        for i in range(self.par.num_materials): 
+            c2_coef[i]= (2.0 * self.dt() / (self.ddx * self.coef_aux()[i])) \
+                        * math.sqrt(sp.epsilon_0/sp.mu_0)
 
-            c2_malla[int(self.parameters[i][2]) : int(self.parameters[i][3])]= c2_coef[i]     
+            c2_malla[self.par.start_m()[i] : self.par.end_m()[i]]= c2_coef[i]     
                       
         return c2_malla
 
+
     def c3_StDe(self):
-        c3_coef = np.empty(self.num_materials)
+        c3_coef = np.empty(self.par.num_materials)
         c3_malla =  np.zeros(self.ncells+1)
 
-        for i in range(self.num_materials):
-            c3_coef[i] = 4 * self.dt()*\
-            (self.parameters[i][1]*self.s_parameters[i][2]*self.s_parameters[i][0]-\
-            self.parameters[i][0]*self.s_parameters[i][3]*self.s_parameters[i][1])\
-            / (sp.c * np.power(self.coef_aux()[i],2))    
+        for i in range(self.par.num_materials):
+            c3_coef[i] = 4 * self.dt() * sp.epsilon_0 * \
+            (self.par.sigma()[i]*self.par.c_eps_E()[i]*self.par.std_eps_r()[i]-\
+            self.par.epsilon_r()[i]*self.par.c_sigma_E()[i]*self.par.std_sigma()[i])\
+            / (np.power(self.coef_aux()[i],2))    
 
-            c3_malla[int(self.parameters[i][2]) : int(self.parameters[i][3])]= c3_coef[i]      
+            c3_malla[self.par.start_m()[i] : self.par.end_m()[i]]= c3_coef[i]      
 
         return c3_malla
 
+
     def c4_StDe(self):
-        c4_coef = np.empty(self.num_materials)
+        c4_coef = np.empty(self.par.num_materials)
         c4_malla = np.zeros(self.ncells+1)
 
-        for i in range(self.num_materials):
-            c4_coef[i] = (1.0/(sp.c*self.coef_aux()[i]))\
-                *((2*sp.epsilon_0*self.s_parameters[i][0]*\
-                self.s_parameters[i][4] + self.dt()*self.s_parameters[i][1] * \
-                self.s_parameters[i][5])/self.coef_aux()[i])        
+        for i in range(self.par.num_materials):
+            c4_coef[i] = ((2.0 * self.dt()/(self.ddx*self.coef_aux()[i]))\
+                *((2*sp.epsilon_0*self.par.std_eps_r()[i]*\
+                self.par.c_eps_H()[i] + self.dt()*self.par.std_sigma()[i] * \
+                self.par.c_sigma_H()[i])/self.coef_aux()[i])) * \
+                math.sqrt(sp.epsilon_0/sp.mu_0)           
 
-            c4_malla[int(self.parameters[i][2]) : int(self.parameters[i][3])]= c4_coef[i]
+            c4_malla[self.par.start_m()[i] : self.par.end_m()[i]]= c4_coef[i]
 
         return c4_malla
 
 
 
+
+
 class Materials:
+    def __init__(self, materiales, s_materiales):
+        self.materiales=materiales
+        self.s_materiales=s_materiales
+        self.num_materials=len(materiales)
 
-    def material(self,epsilon_r,sigma,start_m,end_m):
-        parameters=list(locals().values())
+    def epsilon_r(self):
+        eps=np.empty(self.num_materials)
 
-        #Avoid getting self parameter 
-        material=np.empty(len(parameters)-1)
+        for i in range(self.num_materials):
+            eps[i]=self.materiales[i][0]
 
-        for i in range(1,len(parameters)):
-            material[i-1] = parameters[i]
+        return eps
 
-        return material
+    def sigma(self):
+        sigma=np.empty(self.num_materials)
+         
+        for i in range(self.num_materials):
+            sigma[i]=self.materiales[i][1]
 
-    def material_matrix(self, materials):
-        num_materials=len(materials)
+        return sigma    
 
-        material_matrix=np.empty((num_materials,len(materials[0])))
+    def start_m(self):
+        start_m=np.empty(self.num_materials,dtype=int)
 
-        for i in range(num_materials):
-            material_matrix[i][:]=materials[i]
+        for i in range(self.num_materials):
+            start_m[i]=self.materiales[i][2]
+
+        return start_m    
+
+    def end_m(self):
+        end_m=np.empty(self.num_materials,dtype=int)
+
+        for i in range(self.num_materials):
+            end_m[i]=self.materiales[i][3]
+
+        return end_m   
+         
+    def std_eps_r(self):
+        std_eps_r=np.empty(self.num_materials)
+
+        for i in range(self.num_materials):
+            std_eps_r[i]=self.s_materiales[i][0]
+
+        return std_eps_r   
+
+    def std_sigma(self):
+        std_sigma=np.empty(self.num_materials)
+
+        for i in range(self.num_materials):
+            std_sigma[i]=self.s_materiales[i][1]
+
+        return std_sigma 
+          
+    def c_eps_E(self):
+        c_eps_E=np.empty(self.num_materials)
+
+        for i in range(self.num_materials):
+            c_eps_E[i]=self.s_materiales[i][2]
+
+        return c_eps_E
+  
+    def c_sigma_E(self):
+        c_sigma_E=np.empty(self.num_materials)
+
+        for i in range(self.num_materials):
+            c_sigma_E[i]=self.s_materiales[i][3]
+
+        return c_sigma_E
+
+    def c_eps_H(self):
+        c_eps_H=np.empty(self.num_materials)
+
+        for i in range(self.num_materials):
+            c_eps_H[i]=self.s_materiales[i][4]
+
+        return c_eps_H
         
-        return material_matrix
+    def c_sigma_H(self):
+        c_sigma_H=np.empty(self.num_materials)
 
-    def s_material(self,std_eps,std_sigma,c_eps_E,c_sigma_E,c_eps_H,c_sigma_H):    
-        parameters=list(locals().values())
+        for i in range(self.num_materials):
+            c_sigma_H[i]=self.s_materiales[i][5]
 
-        #Avoid getting self parameter 
-        stochastic_material=np.empty(len(parameters)-1)
+        return c_sigma_H
 
-        for i in range(1,len(parameters)):
-            stochastic_material[i-1] = parameters[i]
 
-        return stochastic_material
 
-    def s_material_matrix(self, s_materials):
-        num_materials=len(s_materials)
-
-        stochastic_material_matrix=np.empty((num_materials,len(s_materials[0])))
-
-        for i in range(num_materials):
-            stochastic_material_matrix[i][:]=s_materials[i]
-        
-        return stochastic_material_matrix    

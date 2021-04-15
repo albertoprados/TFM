@@ -5,15 +5,15 @@ from matplotlib import rc
 
 class Animator:
 
-    def animationex(self, exanimation, malla):
+    def animationex(self, exanimation, malla, field):
         self.exanimation=exanimation
         self.malla=malla
-
+        self.field=field
 
         cb=malla.materials()[1]
        
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.set(xlim=(0, 200), ylim=(-10.2, 10.2))
+        ax.set(xlim=(0, 200), ylim=(-1.2, 1.2))
 
         x = np.linspace(0, 200, 201)
 
@@ -22,17 +22,20 @@ class Animator:
         def animate(i):
             line.set_ydata(exanimation[i, :])
 
-        plt.ylabel('E$_x$', fontsize='14')
-       
+        if field=="std":
+            plt.ylabel('StdE$_x$', fontsize='14')
+
+        if field=="ex":
+            plt.ylabel('E$_x$', fontsize='14')
+
         plt.plot((0.5 / cb - 1) / 3, 'k--',
                  linewidth=0.75) # The math on cb is just for scaling
 
 
-        num_materials=len(malla.parameters)
-        for i in range(num_materials):
-            plt.text(170 , 0.25 + 0.2 * i, 'Eps = {}'.format(malla.parameters[i][0]),
+        for i in range(malla.par.num_materials):
+            plt.text(170 , 0.25 + 0.2 * i, 'Eps = {}'.format(malla.par.epsilon_r()[i]),
                     horizontalalignment='center')
-            plt.text(170 , -0.75 + 0.2 * i, 'Cond = {}'.format(malla.parameters[i][1]),
+            plt.text(170 , -0.75 + 0.2 * i, 'Cond = {}'.format(malla.par.sigma()[i]),
                     horizontalalignment='center')
         
         plt.xlabel('FDTD cells')

@@ -22,8 +22,8 @@ class FDTD:
         Stochastic_FDTD(self.mesh).BoundaryCondition(std_e,bound_low_s,bound_high_s)
         
         Stochastic_FDTD(self.mesh).StandardDeviation_H(std_h,std_e)
-        Stochastic_FDTD(self.mesh).BoundaryCondition2(std_h)
-    
+        
+      
     
 
     def FDTDLoop(self,time):
@@ -33,13 +33,13 @@ class FDTD:
 
         #Def
         ex=np.zeros(self.mesh.ncells+1)
-        hy=np.zeros(self.mesh.ncells+1)
+        hy=np.zeros(self.mesh.ncells)
         
         ex_save_k1=np.empty(nsteps+1)
         ex_save_k2=np.empty(nsteps+1)
         
-        std_h=np.zeros(self.mesh.ncells+1)
         std_e=np.zeros(self.mesh.ncells+1)
+        std_h=np.zeros(self.mesh.ncells)
 
         #Saving values film
         ex_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
@@ -53,10 +53,12 @@ class FDTD:
         bound_low_s = [0, 0]
         bound_high_s = [0, 0]
         
+        #Coeficiente hy
+        #chy= dt/ (sp.mu_0* self.mesh.ddx)
        
         for time_step in range(1, nsteps + 1):
 
-            ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-2] - hy[1:-1])
+            ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
             ex_save_film[time_step][:]=ex[:]
@@ -65,18 +67,18 @@ class FDTD:
             ex_save_k1[time_step]=ex[self.mesh.FFTpoints()[0]]
             ex_save_k2[time_step]=ex[self.mesh.FFTpoints()[1]]
            
-            ex[self.pulse.k_ini] +=  0.5* self.pulse.pulse(time_step) 
+            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step) 
             
             self.boundarymur(ex,boundary_low,boundary_high)  
             
             
-            hy[:-1] = hy[:-1] + 0.5 * (ex[:-1] - ex[1:])   
+            hy[:] = hy[:] + 0.5 * (ex[:-1] - ex[1:])   
 
-
+          
             self.Include_SFDTD_Analysis(std_h,std_e,ex,hy,bound_low_s,bound_high_s)
             std_e_save_film[time_step][:]=std_e[:]
-          
-            t= time_step+1/2
+            
+            t= time_step + 1/2
             hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
             hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
 
@@ -87,32 +89,28 @@ class FDTD:
 
 
 class Stochastic_FDTD:
-    def __init__(self, malla):
-        self.malla=malla
+    def __init__(self, mesh):
+        self.mesh=mesh
         
                
     def StandardDeviation_H(self,std_h,std_e):
-        std_h[:-1] = std_h[:-1] - 0.5 * (std_e[:-1] - std_e[1:])
+        std_h[:] = std_h[:] - 0.5 * (std_e[:-1] - std_e[1:])
 
     
     def StandardDeviation_E(self,e,h,std_h,std_e):   
-        std_e[1:-1]=self.malla.c1_StDe()[1:-1] * std_e[1:-1]+ \
-                self.malla.c2_StDe()[1:-1] * (std_h[1:-1] - std_h[:-2]) + \
-                self.malla.c3_StDe()[1:-1] * e[1:-1] + \
-                self.malla.c4_StDe()[1:-1] * (h[:-2] - h[1:-1])               
+        std_e[1:-1]=self.mesh.c1_StDe()[1:-1] * std_e[1:-1]+ \
+                1 * (std_h[1:] - std_h[:-1]) + \
+                self.mesh.c3_StDe()[1:-1] * e[1:-1] + \
+                self.mesh.c4_StDe()[1:-1] * (h[:-1] - h[1:])               
 
     def BoundaryCondition(self,std_e,bound_low_s,bound_high_s):
         std_e[0] = bound_low_s.pop(0)
         bound_low_s.append(std_e[1])      
 
-        std_e[self.malla.ncells] = bound_high_s.pop(0)
-        bound_high_s.append(std_e[self.malla.ncells-1])        
+        std_e[self.mesh.ncells] = bound_high_s.pop(0)
+        bound_high_s.append(std_e[self.mesh.ncells-1])        
     
-    def  BoundaryCondition2(self, std_h):
-        std_h[79]=std_h[80]
-        std_h[109]=std_h[110]
-        std_h[139]=std_h[140]
-        
+   
 
 
 

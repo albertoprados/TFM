@@ -1,26 +1,41 @@
 import unittest
 import numpy as np
-from utilities import Utilities, Source, Variables_FDTD
-from mesh import Mesh
+from utilities import Utilities, Source
+from mesh import Mesh, Materials
 from solver import FDTD
 
 class TestSolver(unittest.TestCase):
 
     def test_FFT(self):
         
-        set_1_var=Variables_FDTD(200,0.001,5e-9,4,0,110,140)
-        set_2_var=Variables_FDTD(200,0.001,5e-9,1,0,110,140)
+        #Permitivity,Conductivity,Start_Point,End_Point
+        material_1=[4,0,110,140]
+        material_2=[3,0,80,110]
+        set_m=[material_1,material_2]
+        #Std_Permitivity,Std_Conductivity,Corr_Eps_E,Corr_Sigma_E,Corr_Eps_H,Corr_Sigma_H
+        s_material_1=[1,0.002,1,1,1,1]
+        s_material_2=[0.75,0.003,1,1,1,1]
+        set_s_m=[s_material_1,s_material_2]
+
+        parameters=Materials(set_m,set_s_m)
+
+        air=[[1,0,0,200]]
+        s_air=[[0,0,0,0,0,0]]
+        parameters_air=Materials(air,s_air)
+
+        malla1=Mesh(200,0.001,parameters)
+        malla2=Mesh(200,0.001,parameters_air)
 
         pulso=Source('gauss',40,12,20)
         
-        malla1=Mesh(set_1_var)
-        malla2=Mesh(set_2_var)
-
         #Mesh with a specific permitivity, no conductivity
-        et1k1_test1, et1k2_test1= FDTD(malla1,pulso,set_1_var).FDTDLoop()
-        et2k1, et2k2= FDTD(malla2,pulso,set_2_var).FDTDLoop()
+        et1k1_test1= FDTD(malla1,pulso).FDTDLoop(5e-9)[0]
+        et1k2_test1= FDTD(malla1,pulso).FDTDLoop(5e-9)[1]
+        et2k1= FDTD(malla2,pulso).FDTDLoop(5e-9)[0]
+        et2k2= FDTD(malla2,pulso).FDTDLoop(5e-9)[1]
         #Mesh with no permitivity, no conductivity
-        et1k1_test2, et1k2_test2= FDTD(malla2,pulso,set_2_var).FDTDLoop()    
+        et1k1_test2=FDTD(malla2,pulso).FDTDLoop(5e-9)[0]
+        et1k2_test2= FDTD(malla2,pulso).FDTDLoop(5e-9)[1]    
 
 
         result1,result2= Utilities().FFT(et1k1_test1,et2k1, et1k2_test1, et2k2)  
