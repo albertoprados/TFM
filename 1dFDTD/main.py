@@ -32,13 +32,13 @@ et1k2= FDTD(malla1,pulso).FDTDLoop(5e-9)[1]
 e2tk2= FDTD(malla2,pulso).FDTDLoop(5e-9)[1]
 
 
-
+#std_h_film= FDTD(malla1,pulso).FDTDLoop(5e-9)[4]
 std_e_film= FDTD(malla1,pulso).FDTDLoop(5e-9)[3]
 ex_film=FDTD(malla1,pulso).FDTDLoop(5e-9)[2]
 
 Animator().animationex(ex_film,malla1,'ex')
 Animator().animationex(std_e_film,malla1,'std')
-
+#Animator().animationstdh(std_h_film,malla1,'std')
 
 r= Utilities().FFT(et1k1,e2tk1,et1k2,e2tk2)[0]
 t= Utilities().FFT(et1k1,e2tk1,et1k2,e2tk2)[1]

@@ -9,55 +9,53 @@ class FDTD:
         self.mesh=mesh
         self.pulse=pulse
 
-    def boundarymur(self, ex, boundary_low, boundary_high): 
-        ex[0] = boundary_low.pop(0)
-        boundary_low.append(ex[1])      
 
-        ex[self.mesh.ncells] = boundary_high.pop(0)
-        boundary_high.append(ex[self.mesh.ncells-1])
+    def boundarymur(self, ex, ex_old):
+        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
 
-    
-    def Include_SFDTD_Analysis(self,std_h,std_e,e,h,bound_low_s,bound_high_s):
-        Stochastic_FDTD(self.mesh).StandardDeviation_E(e,h,std_h,std_e)
-        Stochastic_FDTD(self.mesh).BoundaryCondition(std_e,bound_low_s,bound_high_s)
-        
+        c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
+
+        ex[0]=ex_old[1] + c_bound * (ex[1]-ex_old[0])
+        ex[ncells]=ex_old[ncells-1] + c_bound * (ex[ncells-1]-ex_old[ncells])
+
+
+    def Include_SFDTD_Analysis(self,std_h,std_e,e,h,std_e_old):
+        Stochastic_FDTD(self.mesh).StandardDeviation_E(std_h,std_e,e,h)
+        Stochastic_FDTD(self.mesh).BoundaryCondition(std_e,std_e_old)
+
         Stochastic_FDTD(self.mesh).StandardDeviation_H(std_h,std_e)
         
-      
-    
-
-    def FDTDLoop(self,time):
         
+        
+    def FDTDLoop(self,time):
         dt=self.mesh.dt()
         nsteps= int(time / dt)
 
-        #Def
         ex=np.zeros(self.mesh.ncells+1)
         hy=np.zeros(self.mesh.ncells)
-        
+        ex_old=np.zeros(self.mesh.ncells+1)
+
+        #Fourier transform
         ex_save_k1=np.empty(nsteps+1)
         ex_save_k2=np.empty(nsteps+1)
         
+        #Standard Deviation
         std_e=np.zeros(self.mesh.ncells+1)
         std_h=np.zeros(self.mesh.ncells)
+        std_e_old=std_e=np.zeros(self.mesh.ncells+1)
 
-        #Saving values film
+        #Saving values for film
         ex_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
         std_e_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
 
         ca=self.mesh.materials()[0]
         cb=self.mesh.materials()[1]
+        cc=self.mesh.materials()[2]
 
-        boundary_low = [0, 0]
-        boundary_high = [0, 0]
-        bound_low_s = [0, 0]
-        bound_high_s = [0, 0]
-        
-        #Coeficiente hy
-        #chy= dt/ (sp.mu_0* self.mesh.ddx)
        
         for time_step in range(1, nsteps + 1):
-
+            ex_old=copy.deepcopy(ex)
+            
             ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
@@ -69,13 +67,13 @@ class FDTD:
            
             ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step) 
             
-            self.boundarymur(ex,boundary_low,boundary_high)  
+            self.boundarymur(ex,ex_old)  
             
-            
-            hy[:] = hy[:] + 0.5 * (ex[:-1] - ex[1:])   
+            hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])   
 
-          
-            self.Include_SFDTD_Analysis(std_h,std_e,ex,hy,bound_low_s,bound_high_s)
+
+            std_e_old=copy.deepcopy(std_e)          
+            self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
             std_e_save_film[time_step][:]=std_e[:]
             
             t= time_step + 1/2
@@ -97,18 +95,20 @@ class Stochastic_FDTD:
         std_h[:] = std_h[:] - 0.5 * (std_e[:-1] - std_e[1:])
 
     
-    def StandardDeviation_E(self,e,h,std_h,std_e):   
+    def StandardDeviation_E(self,std_h,std_e,e,h):   
         std_e[1:-1]=self.mesh.c1_StDe()[1:-1] * std_e[1:-1]+ \
-                1 * (std_h[1:] - std_h[:-1]) + \
+                self.mesh.c2_StDe()[1:-1] * (std_h[1:] - std_h[:-1]) + \
                 self.mesh.c3_StDe()[1:-1] * e[1:-1] + \
                 self.mesh.c4_StDe()[1:-1] * (h[:-1] - h[1:])               
 
-    def BoundaryCondition(self,std_e,bound_low_s,bound_high_s):
-        std_e[0] = bound_low_s.pop(0)
-        bound_low_s.append(std_e[1])      
+    def BoundaryCondition(self,std_e,std_e_old):
+        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
 
-        std_e[self.mesh.ncells] = bound_high_s.pop(0)
-        bound_high_s.append(std_e[self.mesh.ncells-1])        
+        c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
+
+        std_e[0]=std_e_old[1] + c_bound * (std_e[1]-std_e_old[0])
+        std_e[ncells]=std_e_old[ncells-1] + c_bound * \
+             (std_e[ncells-1]-std_e_old[ncells])    
     
    
 

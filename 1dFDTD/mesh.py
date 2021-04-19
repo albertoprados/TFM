@@ -18,10 +18,12 @@ class Mesh:
 
     def materials(self):
         eaf = np.empty(self.par.num_materials)
+        #Coef. for update E equation
         ca = np.ones(self.ncells+1)
-        cb = np.ones(self.ncells+1) * 0.5
-
-        #(self.dt()/(self.ddx * sp.epsilon_0))
+        c_aux=(self.dt()/(self.ddx*sp.epsilon_0))*math.sqrt(sp.epsilon_0/sp.mu_0)
+        cb = np.ones(self.ncells+1) * c_aux
+        #Coef. for update H equation
+        cc=(self.dt()/(sp.mu_0*self.ddx))*math.sqrt(sp.mu_0/sp.epsilon_0)
 
         for i in range(self.par.num_materials):     
             eaf[i] = self.dt() * self.par.sigma()[i] \
@@ -29,9 +31,9 @@ class Mesh:
             ca[self.par.start_m()[i] : self.par.end_m()[i]] = \
                     (1 - eaf[i] ) / (1 + eaf[i] )
             cb[self.par.start_m()[i] : self.par.end_m()[i]] = \
-                    0.5 / (self.par.epsilon_r()[i] * (1 + eaf[i] ))
+                    c_aux / (self.par.epsilon_r()[i] * (1 + eaf[i] ))
        
-        return  ca, cb
+        return  ca, cb, cc
 
     
 
@@ -62,7 +64,7 @@ class Mesh:
 
     def c2_StDe(self):
         c2_coef = np.empty(self.par.num_materials)
-        c2_malla = np.ones(self.ncells+1) * (self.dt()/self.ddx*sp.epsilon_0) \
+        c2_malla = np.ones(self.ncells+1) * (self.dt()/(self.ddx*sp.epsilon_0)) \
                 * math.sqrt(sp.epsilon_0/sp.mu_0)
 
         for i in range(self.par.num_materials): 
