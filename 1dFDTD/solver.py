@@ -76,12 +76,13 @@ class FDTD:
             self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
             std_e_save_film[time_step][:]=std_e[:]
             
+            
             t= time_step + 1/2
             hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
             hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
-
+            
        
-        return ex_save_k1, ex_save_k2, ex_save_film, std_e_save_film 
+        return ex_save_k1, ex_save_k2, ex_save_film, std_e_save_film * std_e_save_film
 
 
 
@@ -100,6 +101,7 @@ class Stochastic_FDTD:
                 self.mesh.c2_StDe()[1:-1] * (std_h[1:] - std_h[:-1]) + \
                 self.mesh.c3_StDe()[1:-1] * e[1:-1] + \
                 self.mesh.c4_StDe()[1:-1] * (h[:-1] - h[1:])               
+
 
     def BoundaryCondition(self,std_e,std_e_old):
         ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx

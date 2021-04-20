@@ -1,14 +1,16 @@
 import numpy as np
 import scipy.constants as sp
 import math
-
+from mesh import Mesh
 
 class Source:
-    def __init__(self, sourcetype, t_0, s_0, k_ini):
+    def __init__(self, sourcetype, t_0, s_0, freq, malla, k_ini):
         self.sourcetype=sourcetype
         self.t_0=t_0
         self.s_0=s_0
         self.k_ini=k_ini
+        self.freq=freq
+        self.malla=malla
 
     def pulse(self, time):
         
@@ -17,6 +19,9 @@ class Source:
         if self.sourcetype == 'gauss':
             pulse = math.exp(-0.5*( (self.t_0 - time) / self.s_0 )**2)
         
+        if self.sourcetype == 'sin':
+            pulse = math.sin(2.0*np.pi*self.freq*self.malla.dt()*time)
+
         return pulse
 
 

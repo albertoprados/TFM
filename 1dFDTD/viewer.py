@@ -13,9 +13,9 @@ class Animator:
         cb=malla.materials()[1]
        
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.set(xlim=(0, 200), ylim=(-1.2, 1.2))
+        ax.set(xlim=(0, malla.ncells), ylim=(-1.2, 1.2))
 
-        x = np.linspace(0, 200, 201)
+        x = np.linspace(0, malla.ncells, malla.ncells+1)
 
         line = ax.plot(x, exanimation[0, :], color='k', lw=2)[0]                
 
@@ -23,7 +23,7 @@ class Animator:
             line.set_ydata(exanimation[i, :])
 
         if field=="std":
-            plt.ylabel('StdE$_x$', fontsize='14')
+            plt.ylabel('$\sigma^2$ (E$_x$)', fontsize='14')
 
         if field=="ex":
             plt.ylabel('E$_x$', fontsize='14')
@@ -43,7 +43,7 @@ class Animator:
         plt.subplots_adjust(bottom=0.25, hspace=0.45)
     
 
-        anim=FuncAnimation(fig, animate, interval=1, frames=1500)
+        anim=FuncAnimation(fig, animate, interval=1, frames=20000)
         
         plt.draw()
         plt.show()    

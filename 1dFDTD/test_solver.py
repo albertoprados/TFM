@@ -51,8 +51,7 @@ class TestSolver(unittest.TestCase):
             self.assertEqual(result4[i],1)
             
     def test_coef_SFDTD(self):
-        
-        #Permitivity,Conductivity,Start_Point,End_Point
+
         material_1=[4,0.04,110,140]
         set_m=[material_1]
         s_material_1=[1,0.002,1,1,1,1]
@@ -60,24 +59,28 @@ class TestSolver(unittest.TestCase):
 
         parameters=Materials(set_m,set_s_m)
 
-        air=[[1,0,0,200]]
-        s_air=[[0,0,0,0,0,0]]
-        parameters_air=Materials(air,s_air)
-
         malla1=Mesh(200,0.001,parameters)
-        malla2=Mesh(200,0.001,parameters_air)
-  
+        
         coef_1_m=malla1.c1_StDe()
-        
-        
+        coef_2_m=malla1.c2_StDe()
+        coef_3_m=malla1.c3_StDe()
+        coef_4_m=malla1.c4_StDe()
 
         for i in range(110,140):
-            #Coef_1 should return a value between 0 & 1 in material
-            self.assertLess(coef_1_m[i], 1)       
-            
+            #Coef_1 should return a value between 0 & 1 in material, 1 in air
+            self.assertLess(coef_1_m[i], 1)  
+            #Coef_2 should return a value between 0 & 0.5 in material, 0.5 in air
+            self.assertLess(coef_2_m[i], 0.5)
+            #Coef_3 should return a value near 0
+            self.assertLess(coef_3_m[i], 1)
+            #Coef_4 should return a value near 0
+            self.assertLess(coef_4_m[i], 1)
 
-
-
+        for i in range(1,109):
+            self.assertEqual(coef_1_m[i], 1)  
+            self.assertAlmostEqual(coef_2_m[i], 0.5, delta=0.00001)
+            self.assertEqual(coef_3_m[i], 0)
+            self.assertEqual(coef_4_m[i], 0)
 
 
 if __name__ == '__main__':
