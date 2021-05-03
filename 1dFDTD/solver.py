@@ -1,119 +1,123 @@
 import numpy as np
 import copy
-from math import pi, sin, exp
+import math
 import scipy.constants as sp
 
 
 class FDTD:
-    def __init__(self, mesh, pulse, time):
+    def __init__(self, mesh, pulse):
         self.mesh=mesh
         self.pulse=pulse
-        self.time=time
-
-    def boundarymur(self, ex, boundary_low, boundary_high): 
-        ex[0] = boundary_low.pop(0)
-        boundary_low.append(ex[1])      
-
-        ex[self.mesh.ncells] = boundary_high.pop(0)
-        boundary_high.append(ex[self.mesh.ncells-1])
 
 
-    def FDTDLoop(self,k1,k2):
+    def boundarymur(self, ex, ex_old):
+        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
+
+        c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
+
+        ex[0]=ex_old[1] + c_bound * (ex[1]-ex_old[0])
+        ex[ncells]=ex_old[ncells-1] + c_bound * (ex[ncells-1]-ex_old[ncells])
+
+
+    def Include_SFDTD_Analysis(self,std_h,std_e,e,h,std_e_old):
+        Stochastic_FDTD(self.mesh).StandardDeviation_E(std_h,std_e,e,h)
+        Stochastic_FDTD(self.mesh).BoundaryCondition(std_e,std_e_old)
+
+        Stochastic_FDTD(self.mesh).StandardDeviation_H(std_h,std_e)
         
-        dt=self.mesh.ddx / (2*sp.c)
-        nsteps= int(self.time  / dt)
+        
+        
+    def FDTDLoop(self,time):
+        dt=self.mesh.dt()
+        nsteps= int(time / dt)
 
-        # COMENTAR: Mejor quitar nsteps, no guardar siempre todo...
         ex=np.zeros(self.mesh.ncells+1)
-        hy=np.zeros(self.mesh.ncells+1)
-        
+        hy=np.zeros(self.mesh.ncells)
+        ex_old=np.zeros(self.mesh.ncells+1)
+
+        #Fourier transform
         ex_save_k1=np.empty(nsteps+1)
         ex_save_k2=np.empty(nsteps+1)
-
-        #ex_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
         
-        ca=self.mesh.material()[0][1:-1]
-        cb=self.mesh.material()[1][1:-1]
+        #Standard Deviation
+        std_e=np.zeros(self.mesh.ncells+1)
+        std_h=np.zeros(self.mesh.ncells)
+        std_e_old=std_e=np.zeros(self.mesh.ncells+1)
 
-        boundary_low = [0, 0]
-        boundary_high = [0, 0]
+        #Saving values for film
+        ex_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
+        std_e_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
+
+        ca=self.mesh.materials()[0]
+        cb=self.mesh.materials()[1]
+        cc=self.mesh.materials()[2]
+
        
         for time_step in range(1, nsteps + 1):
-
-            ex[1:-1] = ca * ex[1:-1] + cb * (hy[:-2] - hy[1:-1])
+            ex_old=copy.deepcopy(ex)
+            
+            ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
-            #ex_save_film[time_step][:]=ex[:]
+            ex_save_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
-            ex_save_k1[time_step]=ex[k1]
-            ex_save_k2[time_step]=ex[k2]
+            ex_save_k1[time_step]=ex[self.mesh.FFTpoints()[0]]
+            ex_save_k2[time_step]=ex[self.mesh.FFTpoints()[1]]
            
-            ex[self.pulse.k_ini] +=  0.5*self.pulse.pulse(time_step) 
+            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step) 
             
-            self.boundarymur(ex,boundary_low,boundary_high)  
+            self.boundarymur(ex,ex_old)  
+            
+            hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])   
+
+
+            std_e_old=copy.deepcopy(std_e)          
+            self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
+            std_e_save_film[time_step][:]=std_e[:]
             
             
-            hy[:-1] = hy[:-1] + 0.5 * (ex[:-1] - ex[1:])   
-
-            t= time_step+1/2
-            hy[self.pulse.k_ini] += 0.25* self.pulse.pulse(t) 
-            hy[self.pulse.k_ini-1] += 0.25* self.pulse.pulse(t)   
-
-                       
-
-        return ex_save_k1, ex_save_k2,  #ex_save_film
+            t= time_step + 1/2
+            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
+            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
+            
+       
+        return ex_save_k1, ex_save_k2, ex_save_film, std_e_save_film * std_e_save_film
 
 
 
 
-class Source:
-    def __init__(self, sourcetype, t_0, s_0, k_ini):
-        self.sourcetype=sourcetype
-        self.t_0=t_0
-        self.s_0=s_0
-        self.k_ini=k_ini
-
-    def pulse(self, time):
+class Stochastic_FDTD:
+    def __init__(self, mesh):
+        self.mesh=mesh
         
-        self.time=time
-        
-        if self.sourcetype == 'gauss':
-            pulse = exp(-0.5*( (self.t_0 - time) / self.s_0 )**2)
-        
-        return pulse
+               
+    def StandardDeviation_H(self,std_h,std_e):
+        std_h[:] = std_h[:] - 0.5 * (std_e[:-1] - std_e[1:])
 
-
-
-
-#Clase para la Trasformada Rápida de Fourier
-# COMENTAR: Esto es mas un namespace que una clase. 
-# COMENTAR: Cuanto menos estado, mejor
-class Utilities:
-
-    def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2):
-        
-        #Hay que cancelar la parte incidente
-        e1tk1_reflected = e1tk1_total - e2tk1  
-        
-        e1wk1=np.fft.fft(e1tk1_reflected)
-        e2wk1=np.fft.fft(e2tk1)
-
-        e1wk2=np.fft.fft(e1tk2)
-        e2wk2=np.fft.fft(e2tk2)
     
-        R=np.abs(e1wk1) / np.abs(e2wk1)
-        T=np.abs(e1wk2) / np.abs(e2wk2)
-        
-        
-        return  R, T
+    def StandardDeviation_E(self,std_h,std_e,e,h):   
+        std_e[1:-1]=self.mesh.c1_StDe()[1:-1] * std_e[1:-1]+ \
+                self.mesh.c2_StDe()[1:-1] * (std_h[1:] - std_h[:-1]) + \
+                self.mesh.c3_StDe()[1:-1] * e[1:-1] + \
+                self.mesh.c4_StDe()[1:-1] * (h[:-1] - h[1:])               
+
+
+    def BoundaryCondition(self,std_e,std_e_old):
+        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
+
+        c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
+
+        std_e[0]=std_e_old[1] + c_bound * (std_e[1]-std_e_old[0])
+        std_e[ncells]=std_e_old[ncells-1] + c_bound * \
+             (std_e[ncells-1]-std_e_old[ncells])    
     
+   
 
-    def frequency(self,time,e1tk1):
 
-        N=len(e1tk1)
 
-        freq= (1.0/time) * np.arange(N)         
 
-        return freq
+
+
+
 

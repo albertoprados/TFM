@@ -109,6 +109,8 @@
 \usepackage[]{bm}
 \usepackage[]{thmtools}
 \usepackage{braket}
+\usepackage{accents}
+\newcommand{\ubar}[1]{\underaccent{\bar}{#1}}
 
 \newcommand{\marcador}{\vrule height 10pt depth 2pt width 2pt \hskip .5em\relax}
 \newcommand{\cabeceraespecial}{%
@@ -280,7 +282,7 @@ One dimensional Maxwell's equations, in free space, are reduced to:
 & \frac{\partial H_y}{\partial t}=-\frac{1}{\mu_0} \frac{\partial E_x}{\partial z}.
 \end{align}
 
-These equations are those of a plane wave propagating in the $z$ direction with the electric field in the $x$ direction and the magnetic field oriented in the $y$ direction. Using the central difference approximation in the spatial and time derivatives, the following form of the equations is obtanied:
+These equations are those of a plane wave propagating in the $z$ direction with the electric field in the $x$ direction and the magnetic field oriented in the $y$ direction. Using the central difference approximation in the spatial and time derivatives, the following form of the equations is obtained:
 
 \begin{align}
  \frac{E_x^{n+\frac{1}{2}}(k)-E_x^{n-\frac{1}{2}}(k)}{\Delta t}=-\frac{1}{\epsilon_0}\frac{H_y^n \left(k+\frac{1}{2}\right) - H_y^n\left(k-\frac{1}{2}\right)}{\Delta x} \\
@@ -294,23 +296,74 @@ These equations are those of a plane wave propagating in the $z$ direction with 
 \subsection{Propagation in a lossy dielectric medium.}
 
 
-
-\chapter{Stability in the FDTD method.}
-Courant condition.
+\section{Numerical Dispersion.}
+[Book EM simulation techniques based on the FDTD method]
+\section{Stability in the FDTD method.}
+Courant condition.[Book EM simulation techniques based on the FDTD method]
 
 
 \chapter{Source types (Hard source/Soft Source).}
 
 
+\chapter{Stochastic FDTD.}
+\section{Introduction to the S-FDTD method.}
+In the FDTD simulations considered in this work until this point, the values of the permittivity and conductivity used were the average values of the materials and therefore the values of the fields obtained were also their average values. However, materials are statistically variable and this have to be considered since the fields obtained will also vary statistically. \\
+As explained in the last paragraph [Stochastic FDTD for analysis of Statistical Variation in EM], a method is needed to compute these statistical quantities such as variance or standard variation. \\
+The classical method used to compute the statistical properties is the Monte Carlo method [PereColet], but this method comes under one big issue, it requires a huge number of simulations with properties selected at random.
+Now, the Stochastic FDTD (S-FDTD) method is presented which provides a estimate of the mean and variation of the fields at every point in space and time. \\
+The usual FDTD equations adapted in pseudo code format (equation number) are complemented with additional equations to compute the standard deviation. Previously, the electrical properties $\epsilon_r$, $\ubar{\sigma}$ (where the symbol for conductivity has been changed to avoid confusion with the standard deviation) were the average values. \\
+So the equations (1y2 en[S-FDTD]) must be thought as stochastic equations with four random variables, namely $E_x$, $H_y$, $\epsilon_r$ and $\ubar{\sigma}$.
+\section{Mean Field Values}
+The delta method [Delta method] will be the tool used to compute the mean and variance of the fields. Take a function of stochastic variables and expand it in Taylor's series, next apply the expectation operator and neglect higher order terms getting the following expression for the expectation [S-FDTD]:
+\begin{equation}
+E\lbrace g(x_1,x_2,...,x_n)\rbrace \approx E\lbrace g(\mu_{x_1},\mu_{x_2},...,\mu_{x_n})\rbrace + E \left\lbrace \sum_{i=1}^n \frac{\partial g}{\partial x_i}\bigg |_{\mathrlap{\mu_{x_1},\mu_{x_2}...\mu_{x_n}}}(x_i-\mu_{x_i}) \right\rbrace + ...
+\end{equation}
+where higher order terms were neglected. Now, using that $E\lbrace x_i\rbrace =\mu_{x_i}$ gives:
+\begin{equation}
+E\lbrace g(x_1,x_2,...,x_n)\rbrace \approx E\lbrace g(\mu_{x_1},\mu_{x_2},...,\mu_{x_n})\rbrace
+\end{equation}
+This equation tells that the expectation of the fields is obtained using the average of the variables in the fields equations(1y2). Therefore in the S-FDTD method the fields $E_x$ and $H_y$ will be the same as in the traditional FDTD scheme.
+\section{Variance of H fields}
+For the variance of the fields we start again with the definition:
+\begin{equation}
+\sigma^2 \lbrace g(x_1,x_2,...,x_n)\rbrace = E\lbrace g(x_1,x_2,...,x_n)^2\rbrace - E\lbrace g(x_1,x_2,...,x_n)\rbrace ^2,
+\end{equation}
+and now the Taylor expansion is applied obtaining:
+\begin{equation}
+\sigma^2 \lbrace g(x_1,x_2,...,x_n)\rbrace \approx \sum_{i=1}^n\sum_{j=1}^n \frac{\partial g}{\partial x_i}\frac{\partial g}{\partial x_j} \bigg |_{\mathrlap{\mu_{x_1},\mu_{x_2}...\mu_{x_n}}} E\lbrace(x_i-\mu_{x_i})(x_j-\mu_{x_j})\rbrace,
+\end{equation}
+where the first term in the expansion of $E\lbrace g(x_1,x_2,...,x_n)^2\rbrace$ cancels out with the expansion of $E\lbrace g(x_1,x_2,...,x_n)\rbrace ^2$ and, again, higher order terms have been neglected.
+So the goal is to compute the variance for the equation (1), for this purpose two relations involving the variance will be needed, namely:
+\begin{equation}\label{Relations for the variance}
+\begin{split}
+\sigma^2\left[X\pm Y\right] & =\sigma_X^2+\sigma_Y^2\pm 2\textit{Cov}(X,Y), \\
+\sigma^2\lbrace aX \rbrace  & = a^2 \sigma^2 \lbrace X \rbrace,
+\end{split}
+\end{equation}
+as well as the identity for the covariance $\textit{Cov}(X,Y)=\rho_{XY}\sigma\lbrace X \rbrace \sigma\lbrace Y\rbrace$. \\
+\indent The variance of the \textit{H} field equation is:
+\begin{equation}
+\begin{split}
+\sigma^2\left\lbrace H_y^{n+1/2}(k+1/2)-H_y^{n-1/2}(k+1/2)\right\rbrace = \frac{\Delta t^2}{\mu^2 \Delta z^2}\sigma^2\left\lbrace E_x^n(k+1)-E_x^n(k)\right\rbrace
+\end{split}.
+\end{equation}
+This equation can be worked out using the relations \ref{Relations for the variance}, getting the result:
+\begin{equation}
+\begin{split}
+& \sigma^2\left\lbrace H_y^{n+1/2}(k+1/2)\right\rbrace-2\sigma\left\lbrace H_y^{n+1/2}(k+1/2)\right\rbrace \sigma\left\lbrace H_y^{n-1/2}(k+1/2)\right\rbrace \\
+&+ \sigma^2\left\lbrace H_y^{n+1/2}(k+1/2)\right\rbrace=\frac{\Delta t^2}{\mu^2 \Delta z^2} \left(\sigma^2\left\lbrace E_x^n(k+1)\right\rbrace \right. \\
+& \left. -2\sigma\left\lbrace E_x^n(k+1)\right\rbrace \sigma\left\lbrace E_x^n(k)\right\rbrace + \sigma^2 \left\lbrace E_x^n(k)\right\rbrace \right).
+\end{split}
+\end{equation}
+In this equation an approximation has been made, the correlation coefficients have been set equal to one. The correlation coefficient varies between $-1$ and $1$. This coefficient is $\rho_{H_{k+1/2}^{n+1/2},H_{k+1/2}^{n-1/2}}$ for the \textit{H} field, so it is relating the values of the \textit{H} field separated by one time step $\Delta t$ which justifies the approximation. For the correlation coefficient of the \textit{E} field an analogous treatment is made, it's just the correlation between the values of \textit{E} field separated by one spatial step $\Delta z$ [24 en el artículo]. \\
+\indent Observing the last expression for the variance it can be noted that there is a perfect square in each side, taking the square root yields the following update equation for the variance of the \textit{H} field:
+\begin{equation}
+\sigma\left\lbrace H_y^{n+1/2}(k+1/2) \right\rbrace = \sigma\left\lbrace H_y^{n-1/2}(k+1/2)\right\rbrace + \frac{\Delta t}{\mu \Delta z}\left(\sigma \left\lbrace E_x^n(k+1)\right\rbrace -\sigma\left\lbrace E_x^n(k)\right\rbrace \right)
+\end{equation}
+\section{Variance of E fields}
 
-
-
-
-
-
-
-
-
+\section{MPI implementation}
+MPI is a library used for parallel processing [Book EM simulation techniques based on the FDTD method]
 
 
 
