@@ -61,7 +61,7 @@ class Animator:
         plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
         plt.ylim(0,2)
-        plt.xlim(0, 5e10)
+        plt.xlim(0, 2.5e10)
         
         plt.xlabel('Frequency w')
         plt.ylabel('R&T')
