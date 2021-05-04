@@ -42,7 +42,7 @@ e2tk2= FDTD(malla2,pulso).FDTDLoop(5e-9)[1]
 
 
 
-_, _, ex_film, std_e_film= FDTD(malla1,parameters,s_parameters,pulso).FDTDLoop(5e-9)
+_, _, ex_film, std_e_film= FDTD(malla1,parameters,s_parameters,pulso).FDTDLoop()
 
 Animator().animationex(ex_film,malla1,'ex')
 Animator().animationex(std_e_film,malla1,'std')

@@ -11,8 +11,9 @@ class FDTD:
         self.pulse=pulse
         self.par=par
         self.s_par=s_par
+        self.time=5e-9
 
-    def boundarymur(self, ex, ex_old):
+    def boundarymur(self,ex,ex_old):
         ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
 
         c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
@@ -22,24 +23,47 @@ class FDTD:
 
 
     def Include_SFDTD_Analysis(self,std_h,std_e,e,h,std_e_old):
+        std_e_old=copy.deepcopy(std_e) 
         Stochastic_FDTD(self.mesh,self.par,self.s_par).StandardDeviation_E(std_h,std_e,e,h)
         Stochastic_FDTD(self.mesh,self.par,self.s_par).BoundaryCondition(std_e,std_e_old)
 
         Stochastic_FDTD(self.mesh,self.par,self.s_par).StandardDeviation_H(std_h,std_e)
         
-        
-        
-    def FDTDLoop(self,time):
-        dt=self.mesh.dt()
-        nsteps= int(time / dt)
+    def nsteps(self):
+        return int(self.time / self.mesh.dt())
 
+    def updateE(self,ex,hy):
+        ca, cb, _ = self.mesh.materials()
+
+        ex_old=copy.deepcopy(ex)
+        ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
+
+    def updateH(self,ex,hy):
+        cc = self.mesh.materials()[2]
+
+        hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])
+
+    def fft_E(self,ex_k1,ex_k2,ex,time_step):
+        ex_k1[time_step]=ex[self.mesh.FFTpoints()[0]]
+        ex_k2[time_step]=ex[self.mesh.FFTpoints()[1]]
+
+    def h_source(self,hy,time_step):    
+        t= time_step + 1/2
+        hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
+        hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
+
+    def e_source(self,ex,time_step):    
+        ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)    
+
+    def FDTDLoop(self):
+    
         ex=np.zeros(self.mesh.ncells+1)
         hy=np.zeros(self.mesh.ncells)
         ex_old=np.zeros(self.mesh.ncells+1)
 
         #Fourier transform
-        ex_save_k1=np.empty(nsteps+1)
-        ex_save_k2=np.empty(nsteps+1)
+        ex_save_k1=np.empty(self.nsteps()+1)
+        ex_save_k2=np.empty(self.nsteps()+1)
         
         #Standard Deviation
         std_e=np.zeros(self.mesh.ncells+1)
@@ -47,41 +71,33 @@ class FDTD:
         std_e_old=std_e=np.zeros(self.mesh.ncells+1)
 
         #Saving values for film
-        ex_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
-        std_e_save_film=np.empty((nsteps+1,self.mesh.ncells+1))
-
-        ca, cb, cc = self.mesh.materials()
+        ex_save_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))
+        std_e_save_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))
     
 
-        for time_step in range(1, nsteps + 1):
-            ex_old=copy.deepcopy(ex)
-            
-            ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
+        for time_step in range(self.nsteps()):
+           
+            self.updateE(ex, hy)
             
             #Guardo los valores a representar
             ex_save_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
-            ex_save_k1[time_step]=ex[self.mesh.FFTpoints()[0]]
-            ex_save_k2[time_step]=ex[self.mesh.FFTpoints()[1]]
+            self.fft_E(ex_save_k1, ex_save_k2, ex, time_step)
            
-            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step) 
+            self.e_source(ex, time_step)
             
             self.boundarymur(ex,ex_old)  
             
-            hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])   
+            self.updateH(ex, hy)    
 
-
-            std_e_old=copy.deepcopy(std_e)          
             self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
             std_e_save_film[time_step][:]=std_e[:]
             
+            self.h_source(hy, time_step)
+
             
-            t= time_step + 1/2
-            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
-            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
-            
-       
+
         return ex_save_k1, ex_save_k2, ex_save_film, std_e_save_film * std_e_save_film
 
 
