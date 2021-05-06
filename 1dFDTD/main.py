@@ -13,6 +13,7 @@ muscle=[55,0.87,551,659]
 set_m=[fat,skin,muscle]
 parameters=Materials(set_m)
 
+
 #Std_Permitivity,Std_Conductivity,Corr_Eps_E,Corr_Sigma_E,Corr_Eps_H,Corr_Sigma_H
 s_skin=[3.4,0.1,1,1,1,1]
 s_fat=[2.7,0.06,1,1,1,1]
@@ -42,11 +43,14 @@ e2tk2= FDTD(malla2,pulso).FDTDLoop(5e-9)[1]
 
 
 
-_, _, ex_film, std_e_film= FDTD(malla1,parameters,s_parameters,pulso).FDTDLoop()
+_, _, ex_film, std_e_film= FDTD(malla1,s_parameters,pulso,7e-9).FDTDLoop('yes')
 
-Animator().animationex(ex_film,malla1,'ex')
+#Animator().animationex(ex_film,malla1,'ex')
 Animator().animationex(std_e_film,malla1,'std')
 
+ex_film_mc, var_e_film_mc = MonteCarlo(malla1, set_m, s_parameters, pulso, 7e-9, 100).FDTDrun()
+#Animator().animationex(ex_film_mc,malla1,'ex')
+Animator().animationex(var_e_film_mc,malla1,'var')
 
 
 """
@@ -56,8 +60,11 @@ freq=Utilities().frequency(5e-9,et1k1)
 
 Animator().fftgraph(freq,r,t)
 """
-"""
-prueba=MonteCarlo(malla1, 100).gaussiandistribution()[1]
 
-print(prueba)
+"""
+x=MonteCarlo(malla1, set_m, s_parameters, 10).rnd_epsilon_r()
+y=MonteCarlo(malla1, set_m, s_parameters, 7).FDTDrun()
+
+#print(x)
+print(y)
 """

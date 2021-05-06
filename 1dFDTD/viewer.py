@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
 from matplotlib import rc
 
@@ -41,7 +42,7 @@ class Animator:
         plt.xlabel('FDTD cells')
 
         plt.subplots_adjust(bottom=0.25, hspace=0.45)
-    
+
 
         anim=FuncAnimation(fig, animate, interval=1, frames=20000)
         
