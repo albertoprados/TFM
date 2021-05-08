@@ -49,20 +49,18 @@ class Animator:
         plt.draw()
         plt.show()    
 
-    def fftgraph(self, freq, r, t):
-        self.freq=freq
-        self.r=r
-        self.t=t
-
+    def fftgraph(self, freq, r, t, r_panel, t_panel):
         #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
         #rc('text', usetex=True)
 
-        plt.plot(freq,r, label='R')
-        plt.plot(freq,t, label='T')
+        plt.plot(freq,r, label='R FDTD')
+        plt.plot(freq,r_panel, label='R Panel')
+        plt.plot(freq,t, label='T FDTD')
+        plt.plot(freq,t_panel, label='T Panel')
         plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
-        #plt.ylim(-0.2,2.2)
-        #plt.xlim(0, 10e10)
+        plt.ylim(-0.2,2.2)
+        #plt.xlim(0, 1.5e11)
         
         plt.xlabel('Frequency w')
         plt.ylabel('R&T')

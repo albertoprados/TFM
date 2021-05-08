@@ -13,7 +13,7 @@ class Mesh:
         return self.ddx/(2*sp.c)    
     
     def FFTpoints(self):
-        return 80, 170
+        return 250, 700
 
 
     def materials(self):

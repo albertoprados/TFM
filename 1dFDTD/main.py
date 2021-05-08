@@ -1,8 +1,8 @@
-from utilities import Source, Utilities, Panel
+from utilities import Source, Utilities, Panels
 from mesh import Mesh, Materials, S_Materials
 from solver import FDTD, MonteCarlo 
 from viewer import Animator
-
+import numpy as np
 
 
 #Permitivity,Conductivity,Start_Point,End_Point
@@ -29,26 +29,27 @@ s_par_m1=S_Materials([s_material1])
 
 
 
-void=[[1,0,0,200]]
+void=[[1,0,0,800]]
 s_void=[[0,0,0,0,0,0]]
 par_void=Materials(void)
 s_par_void=S_Materials(s_void)
 
 
 #Tiempo de simulacion
-time=5e-9
+time=5e-8
 
 #Parametros de la malla
 #Malla 3 materiales
-"""
-malla1=Mesh(800,0.0005,parameters)
-malla2=Mesh(800,0.0005,par_void)
-"""
+
+malla1=Mesh(800,0.001,parameters)
+malla2=Mesh(800,0.001,par_void)
+
 #-------------------------------------------
 #Malla 1 material
-malla1=Mesh(200,0.0005,par_m1)
-malla2=Mesh(200,0.0005,par_void)
-
+"""
+malla1=Mesh(200,0.001,par_m1)
+malla2=Mesh(200,0.001,par_void)
+"""
 #Parametros del pulso
 pulso=Source('gauss',40,12,2e9,malla1,20)
 
@@ -57,17 +58,19 @@ pulso=Source('gauss',40,12,2e9,malla1,20)
 
 #Ejecucion y visualizacion
 """
-ex1_k1, ex1_k2, ex_film, std_e_film= FDTD(malla1,s_par_m1,pulso,time).FDTDLoop('yes')
-
+ex1_k1, ex1_k2, ex_film, std_e_film= FDTD(malla1,s_parameters,pulso,time).FDTDLoop('yes')
 ex2_k1, ex2_k2 , _ , _ =FDTD(malla2,s_par_void,pulso,time).FDTDLoop('no')
 
 r, t= Utilities().FFT(ex1_k1,ex2_k1,ex1_k2,ex2_k2)
 freq=Utilities().frequency(time,ex1_k1)
+#Resultado Analitico
 
-Animator().fftgraph(freq,r,t)
+r_panel, t_panel=Panels(malla1).RyT_freq(freq)
+
+Animator().fftgraph(freq,r,t,r_panel,t_panel)
 
 
-Animator().animationex(ex_film1,malla1,'ex')
+Animator().animationex(ex_film,malla1,'ex')
 Animator().animationex(std_e_film,malla1,'std')
 """
 #--------------------------------------------
@@ -75,17 +78,19 @@ Animator().animationex(std_e_film,malla1,'std')
 
 
 #Monte Carlo
-
-ex1_k1_mc, ex1_k2_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, [material1], s_par_m1, pulso, time, 10000).FDTDrun()
+#ex_film_mc
+#var_e_film_mc
+ex1_k1_mc, ex1_k2_mc,_ ,_  = MonteCarlo(malla1, set_m, s_parameters, pulso, time, 100).FDTDrun()
 ex2_k1_mc, ex2_k2_mc, _ , _ = MonteCarlo(malla2, void, s_par_void, pulso, time, 1).FDTDrun()
 #Film
-Animator().animationex(ex_film_mc,malla1,'ex')
-Animator().animationex(var_e_film_mc,malla1,'var')
+#Animator().animationex(ex_film_mc,malla1,'ex')
+#Animator().animationex(var_e_film_mc,malla1,'var')
 #FFT
 
 r_mc, t_mc= Utilities().FFT(ex1_k1_mc,ex2_k1_mc, ex1_k2_mc,ex2_k2_mc)
 freq_mc=Utilities().frequency(time,ex1_k1_mc)
 
-Animator().fftgraph(freq_mc,r_mc,t_mc)
+r_panel, t_panel=Panels(malla1).RyT_freq(freq_mc)
+Animator().fftgraph(freq_mc,r_mc,t_mc,r_panel,t_panel)
 
 

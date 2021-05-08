@@ -187,7 +187,7 @@ class MonteCarlo:
             ex_k1_avg += ex_k1
             ex_k2_avg += ex_k2
 
-            if (k % 100)==0:
+            if (k % 10)==0:
                 print(k)
 
         

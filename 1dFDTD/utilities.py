@@ -50,38 +50,71 @@ class Utilities:
     def frequency(self,time,e1tk1): 
         N=len(e1tk1)
 
-        w= ((2*np.pi)/time) * np.arange(N)         
+        w= ((2*np.pi)/time) * np.arange(1,N+1)         
 
         return w
 
-class Panel: 
-    def __init__(self, thickness, epsilon_r = 1.0, sigma = 0.0, mu_r = 1.0):
-        self.thickness = thickness
-        self.epsilon_r = epsilon_r
+class Panels: 
+    def __init__(self, mesh, mu_r = 1.0):
+        self.mesh=mesh
         self.mu_r = mu_r
-        self.sigma = sigma
+        self.n_materials=self.mesh.par.num_materials
+
+    def thickness(self):
+        thickness=np.zeros(self.n_materials)
+        for i in range(self.n_materials):
+            thickness[i]=(self.mesh.par.end_m()[i]-self.mesh.par.start_m()[i])\
+                *self.mesh.ddx
+
+        return thickness        
 
     def eta_0(self):
         return np.sqrt(mu_0/epsilon_0)    
 
     def epsilon_c(self, omega):
-        return self.epsilon_r*epsilon_0 - complex(0,1)*self.sigma/omega
+        eps_c=np.zeros(self.n_materials,dtype=complex)
+
+        for i in range(self.n_materials):
+            eps_c[i]= self.mesh.par.epsilon_r()[i] * epsilon_0 - \
+                (complex(0,1)*self.mesh.par.sigma()[i] / omega)
+
+        return eps_c
 
     def mu_c(self, omega):
         return self.mu_r * mu_0
 
     def gamma(self, omega):
-        return complex(0,1) * omega * \
-            np.sqrt(self.epsilon_c(omega) * self.mu_c(omega))
+        gamma=np.zeros(self.n_materials,dtype=complex)
+        for i in range(self.n_materials):
+            gamma[i]= complex(0,1) * omega * \
+            np.sqrt(self.epsilon_c(omega)[i] * self.mu_c(omega))
+
+        return gamma
 
     def eta(self, omega):
-        return np.sqrt(self.mu_c(omega) / self.epsilon_c(omega))
+        eta=np.zeros(self.n_materials,dtype=complex)
+        for i in range(self.n_materials):
+            eta[i]= np.sqrt(self.mu_c(omega) / self.epsilon_c(omega)[i])
+
+        return eta
 
     def phi(self, omega):
-        gd  = self.gamma(omega) * self.thickness
-        eta = self.eta(omega)
-        return np.array([[np.cosh(gd),      np.sinh(gd) * eta], \
-                         [np.sinh(gd) /eta, np.cosh(gd)      ]])
+        phi=np.zeros((self.n_materials,2,2),dtype=complex)
+        phi_total=np.array([[1,0],[0,1]])
+
+        gd=np.zeros(self.n_materials,dtype=complex)
+
+        eta=self.eta(omega)
+        for i in range(self.n_materials):
+            gd[i]= self.gamma(omega)[i] * self.thickness()[i]
+
+            phi[i]=np.array([[np.cosh(gd[i]),      np.sinh(gd[i]) * eta[i]], \
+                         [np.sinh(gd[i]) /eta[i], np.cosh(gd[i])      ]])
+            
+            phi_total=np.matmul(phi_total,phi[i])
+
+
+        return phi_total
 
     def _den(self, omega):
         phi = self.phi(omega)
@@ -95,3 +128,16 @@ class Panel:
         return \
             (phi[0,0]*self.eta_0() + phi[0,1] - phi[1,0]*self.eta_0()**2 - phi[1,1]*self.eta_0()) / \
             self._den(omega)
+
+    
+    def RyT_freq(self, freq):
+        R_freq=np.zeros(len(freq),dtype=complex)
+        T_freq=np.zeros(len(freq),dtype=complex)
+
+        for i in range(len(freq)):
+            R_freq[i]=self.R(freq[i])
+            T_freq[i]=self.T(freq[i])
+
+        return np.abs(R_freq), np.abs(T_freq)        
+    
+
