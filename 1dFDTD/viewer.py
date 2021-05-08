@@ -57,12 +57,12 @@ class Animator:
         #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
         #rc('text', usetex=True)
 
-        plt.plot(freq,r*r, label='R')
-        plt.plot(freq,t*t, label='T')
+        plt.plot(freq,r, label='R')
+        plt.plot(freq,t, label='T')
         plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
-        plt.ylim(0,2)
-        plt.xlim(0, 2.5e10)
+        #plt.ylim(-0.2,2.2)
+        #plt.xlim(0, 10e10)
         
         plt.xlabel('Frequency w')
         plt.ylabel('R&T')

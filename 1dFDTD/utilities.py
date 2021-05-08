@@ -5,10 +5,10 @@ import math
 from mesh import Mesh
 
 class Source:
-    def __init__(self, sourcetype, t_0, s_0, freq, malla, k_ini):
+    def __init__(self, sourcetype, delay, spread, freq, malla, k_ini):
         self.sourcetype=sourcetype
-        self.t_0=t_0
-        self.s_0=s_0
+        self.delay=delay
+        self.spread=spread
         self.k_ini=k_ini
         self.freq=freq
         self.malla=malla
@@ -18,13 +18,13 @@ class Source:
         self.time=time
         
         if self.sourcetype == 'gauss':
-            pulse = math.exp(-0.5*( (self.t_0 - time) / self.s_0 )**2)
+            pulse = math.exp(-0.5*( (self.delay - time) / self.spread )**2)
         
         if self.sourcetype == 'sin':
             pulse = math.sin(2.0*np.pi*self.freq*self.malla.dt()*time)
 
         return pulse
-
+    
 
 
 class Utilities:
@@ -50,9 +50,9 @@ class Utilities:
     def frequency(self,time,e1tk1): 
         N=len(e1tk1)
 
-        freq= (1.0/time) * np.arange(N)         
+        w= ((2*np.pi)/time) * np.arange(N)         
 
-        return freq
+        return w
 
 class Panel: 
     def __init__(self, thickness, epsilon_r = 1.0, sigma = 0.0, mu_r = 1.0):

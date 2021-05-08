@@ -29,26 +29,7 @@ class FDTD:
         Stochastic_FDTD(self.mesh,self.s_par).StandardDeviation_H(std_h,std_e)
         
     def nsteps(self):
-        return int(self.time / self.mesh.dt())
-
-    def updateE(self,ex,hy,ca,cb):
-        ex_old=copy.deepcopy(ex)
-        ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
-
-    def updateH(self,ex,hy,cc):
-        hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])
-
-    def fft_E(self,ex_k1,ex_k2,k1,k2,ex,time_step):
-        ex_k1[time_step]=ex[k1]
-        ex_k2[time_step]=ex[k2]
-
-    def h_source(self,hy,time_step):    
-        t= time_step + 1/2
-        hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
-        hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
-
-    def e_source(self,ex,time_step):    
-        ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)    
+        return int(self.time / self.mesh.dt())  
 
     def FDTDLoop(self, Stochastic_Analysis):
         self.Stochastic_Analysis=Stochastic_Analysis
@@ -78,31 +59,146 @@ class FDTD:
         k1, k2=self.mesh.FFTpoints()
 
         for time_step in range(self.nsteps()):
-           
-            self.updateE(ex, hy, ca, cb)
+            ex_old=copy.deepcopy(ex)
+            ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
             ex_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
-            self.fft_E(ex_k1, ex_k2, k1, k2, ex, time_step)
+            ex_k1[time_step]=ex[k1]
+            ex_k2[time_step]=ex[k2]
            
-            self.e_source(ex, time_step)
+            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)  
             
             self.boundarymur(ex,ex_old)  
             
-            self.updateH(ex, hy, cc)    
+            hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])
+               
 
             if Stochastic_Analysis == 'yes':
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
                 std_e_film[time_step][:]=std_e[:]
             
-            self.h_source(hy, time_step)
+            t= time_step + 1/2
+            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
+            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
 
             
 
-        return ex_k1, ex_k2, ex_film, std_e_film * std_e_film
+        return ex_k1, ex_k2, ex_film, np.power(std_e_film ,2)
 
+
+
+
+class MonteCarlo:
+    def __init__(self, mesh, set_materials, s_par, pulse, time, mc_steps):
+        self.mesh=mesh
+        self.set_materials=set_materials
+        self.s_par=s_par
+        self.pulse=pulse
+        self.time=time
+        self.mc_steps=mc_steps
+        self.n_materials=self.mesh.par.num_materials
+        
+
+    def Gaussian_Pdf(self):
+        rnd_epsilon_r=np.zeros((self.n_materials,self.mc_steps))       
+        rnd_sigma=np.zeros((self.n_materials,self.mc_steps))  
+
+        for i in range(self.n_materials):
+            rnd_epsilon_r[i]=np.random.normal(self.mesh.par.epsilon_r()[i], \
+                self.s_par.std_eps_r()[i],self.mc_steps)
+            rnd_sigma[i]=np.random.normal(self.mesh.par.sigma()[i], \
+                self.s_par.std_sigma()[i],self.mc_steps)
+    
+
+        return rnd_epsilon_r, rnd_sigma
+
+
+    def pdf(self,x,mu,var):
+        #Distribución eponencial
+        return (1.0/mu)*np.exp(-(1.0/mu)*x)
+
+    def Metropolis(self,delta,markov_0):
+        n=self.mc_steps
+        #Valores medios
+        eps_r=self.mesh.par.epsilon_r()
+        sigma=self.mesh.par.sigma()
+        #Desviaciones
+        std_eps=self.s_par.std_eps_r()
+        std_sigma=self.s_par.std_sigma()
+
+        rnd_eps=np.zeros((self.n_materials,n))
+        rnd_sigma=np.zeros((self.n_materials,n))
+        #Inicio de la cadena de Markov
+        for i in range(self.n_materials):
+            rnd_eps[i][0]=markov_0[i][0]
+            rnd_sigma[i][0]=markov_0[i][1]
+
+        for i in range(self.n_materials):
+            for k in range(n):
+                #Propuesta 
+                y=rnd_eps[i][k]+np.random.uniform(-delta[i][0],delta[i][0])
+                z=rnd_sigma[i][k]+np.random.uniform(-delta[i][1],delta_sigma[i][1])
+
+                if np.random.rand() < min(1,self.pdf(y,eps_r[i],std_eps[i]) \
+                    /self.pdf(rnd_eps[i][k],eps_r[i],std_eps[i])):
+                    rnd_eps[i][k+1]=y
+                else:
+                    rnd_eps[i][k+1]=rnd_eps[i][k]    
+
+                if np.random.rand() < min(1,self.pdf(z,sigma[i],std_sigma[i]) \
+                    /self.pdf(rnd_sigma[i][k],sigma[i],std_sigma[i])):
+                    rnd_sigma[i][k+1]=z
+                else:
+                    rnd_sigma[i][k+1]=rnd_sigma[i][k]      
+
+        return rnd_eps, rnd_sigma
+
+    def FDTDrun(self):
+        
+        nsteps=FDTD(self.mesh, self.s_par, self.pulse, self.time).nsteps()
+        ncells=self.mesh.ncells
+
+        rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf()
+        
+        
+        #Definicion de vectores medios
+        ex_film_avg=np.zeros((nsteps+1,ncells+1))
+        ex_film_var=np.zeros((nsteps+1,ncells+1))
+        ex_k1_avg=np.zeros(nsteps+1)
+        ex_k2_avg=np.zeros(nsteps+1)
+        
+
+        for k in range(self.mc_steps):
+            for i in range(self.n_materials):
+                self.set_materials[i][0]=rnd_epsilon_r[i][k]
+                self.set_materials[i][1]=rnd_sigma[i][k]
+            #Creo las instancias de malla necesarias
+            malla=Mesh(ncells,self.mesh.ddx,Materials(self.set_materials))
+
+            ex_k1, ex_k2, ex_film, _=FDTD(malla, self.s_par, self.pulse, self.time).FDTDLoop('no')
+            
+            #Film
+            ex_film_avg += ex_film    
+            ex_film_var += np.power(ex_film,2)
+            #Electric field in k1, k2
+            ex_k1_avg += ex_k1
+            ex_k2_avg += ex_k2
+
+            if (k % 100)==0:
+                print(k)
+
+        
+        #Film
+        ex_film_avg = ex_film_avg / self.mc_steps
+        ex_film_var = (ex_film_var /self.mc_steps) - (np.power(ex_film_avg,2))
+        #E field in k1,k2
+        ex_k1_avg = ex_k1_avg / self.mc_steps
+        ex_k2_avg = ex_k2_avg / self.mc_steps
+
+        return   ex_k1_avg, ex_k2_avg, ex_film_avg, ex_film_var
 
 
 
@@ -200,66 +296,7 @@ class Stochastic_FDTD:
     
    
 
-class MonteCarlo:
-    def __init__(self, mesh, set_materials, s_par, pulse, time, mc_steps):
-        self.mesh=mesh
-        self.set_materials=set_materials
-        self.s_par=s_par
-        self.pulse=pulse
-        self.time=time
-        self.mc_steps=mc_steps
-        self.n_materials=self.mesh.par.num_materials
-        
 
-    def rnd_epsilon_r(self):
-        rnd_epsilon_r=np.zeros((self.n_materials,self.mc_steps))       
-
-        for i in range(self.n_materials):
-            rnd_epsilon_r[i]=np.random.normal(self.mesh.par.epsilon_r()[i], \
-                self.s_par.std_eps_r()[i],self.mc_steps)
-
-        return rnd_epsilon_r
-
-    def rnd_sigma(self):
-        rnd_sigma=np.zeros((self.n_materials,self.mc_steps))      
-
-        for i in range(self.n_materials):
-            rnd_sigma[i]=np.random.normal(self.mesh.par.sigma()[i], \
-                self.s_par.std_sigma()[i],self.mc_steps)
-
-        return rnd_sigma
-
-
-    def FDTDrun(self):
-        
-        nsteps=FDTD(self.mesh, self.s_par, self.pulse, self.time).nsteps()
-        ncells=self.mesh.ncells
-
-        random_epsilon_r=self.rnd_epsilon_r()
-        random_sigma=self.rnd_sigma()
-
-        #Creo las instancias de malla necesarias
-        ex_film_avg=np.empty((nsteps+1,ncells+1))
-        ex_film_var=np.empty((nsteps+1,ncells+1))
-
-        for k in range(self.mc_steps):
-            for i in range(self.n_materials):
-                self.set_materials[i][0]=random_epsilon_r[i][k]
-                self.set_materials[i][1]=random_sigma[i][k]
-
-            malla=Mesh(ncells,self.mesh.ddx,Materials(self.set_materials))
-
-            ex_film=FDTD(malla, self.s_par, self.pulse, self.time).FDTDLoop('no')[2]
-            
-            ex_film_avg += ex_film    
-            ex_film_var += ex_film * ex_film
-            if (k % 10)==0:
-                print(k)
-
-        ex_film_avg = ex_film_avg / self.mc_steps
-        ex_film_var = (ex_film_var /self.mc_steps) - (ex_film_avg * ex_film_avg)
-
-        return   ex_film_avg, ex_film_var
 
 
 
