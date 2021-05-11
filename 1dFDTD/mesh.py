@@ -4,16 +4,19 @@ import math
 
 
 class Mesh:
-    def __init__(self, ncells, ddx, par):    
+    def __init__(self, ncells, ddx, par, s_par):    
         self.ncells=ncells
         self.ddx=ddx
         self.par=par
+        self.s_par=s_par
         
     def dt(self):
         return self.ddx/(2*sp.c)    
     
     def FFTpoints(self):
-        return 250, 700
+        #250,700
+        #110,140
+        return self.par.start_m()[0] - 30, self.par.end_m()[-1] + 30
 
 
     def materials(self):

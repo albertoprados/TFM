@@ -1,4 +1,5 @@
-from mesh import Mesh, Materials
+from mesh import Mesh, Materials, S_Materials
+from utilities import Utilities
 import numpy as np
 import copy
 import math
@@ -6,10 +7,10 @@ import scipy.constants as sp
 
 
 class FDTD:
-    def __init__(self, mesh, s_par, pulse, time):
+    def __init__(self, mesh, pulse, time):
         self.mesh=mesh
         self.pulse=pulse
-        self.s_par=s_par
+        self.s_par=self.mesh.s_par
         self.time=time
 
     def boundarymur(self,ex,ex_old):
@@ -23,10 +24,10 @@ class FDTD:
 
     def Include_SFDTD_Analysis(self,std_h,std_e,e,h,std_e_old):
         std_e_old=copy.deepcopy(std_e) 
-        Stochastic_FDTD(self.mesh,self.s_par).StandardDeviation_E(std_h,std_e,e,h)
-        Stochastic_FDTD(self.mesh,self.s_par).BoundaryCondition(std_e,std_e_old)
+        Stochastic_FDTD(self.mesh).StandardDeviation_E(std_h,std_e,e,h)
+        Stochastic_FDTD(self.mesh).BoundaryCondition(std_e,std_e_old)
 
-        Stochastic_FDTD(self.mesh,self.s_par).StandardDeviation_H(std_h,std_e)
+        Stochastic_FDTD(self.mesh).StandardDeviation_H(std_h,std_e)
         
     def nsteps(self):
         return int(self.time / self.mesh.dt())  
@@ -80,6 +81,7 @@ class FDTD:
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
                 std_e_film[time_step][:]=std_e[:]
             
+            
             t= time_step + 1/2
             hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
             hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
@@ -92,10 +94,9 @@ class FDTD:
 
 
 class MonteCarlo:
-    def __init__(self, mesh, set_materials, s_par, pulse, time, mc_steps):
+    def __init__(self, mesh, pulse, time, mc_steps):
         self.mesh=mesh
-        self.set_materials=set_materials
-        self.s_par=s_par
+        self.s_par=self.mesh.s_par
         self.pulse=pulse
         self.time=time
         self.mc_steps=mc_steps
@@ -156,56 +157,72 @@ class MonteCarlo:
 
         return rnd_eps, rnd_sigma
 
-    def FDTDrun(self):
+
+    def MC(self, materiales, void):
         
-        nsteps=FDTD(self.mesh, self.s_par, self.pulse, self.time).nsteps()
+        nsteps=FDTD(self.mesh, self.pulse, self.time).nsteps()
         ncells=self.mesh.ncells
 
         rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf()
         
-        
         #Definicion de vectores medios
         ex_film_avg=np.zeros((nsteps+1,ncells+1))
         ex_film_var=np.zeros((nsteps+1,ncells+1))
-        ex_k1_avg=np.zeros(nsteps+1)
-        ex_k2_avg=np.zeros(nsteps+1)
-        
+        R=np.zeros(nsteps+1)
+        T=np.zeros(nsteps+1)
+        R_avg=np.zeros(nsteps+1)
+        T_avg=np.zeros(nsteps+1)
+        R_std=np.zeros(nsteps+1)
+        T_std=np.zeros(nsteps+1)
+
+        #E auxiliar FFT
+        malla_aux=Mesh(ncells,self.mesh.ddx, Materials(void), self.s_par)
+        ex2_k1, ex2_k2, _, _=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('no')            
 
         for k in range(self.mc_steps):
             for i in range(self.n_materials):
-                self.set_materials[i][0]=rnd_epsilon_r[i][k]
-                self.set_materials[i][1]=rnd_sigma[i][k]
-            #Creo las instancias de malla necesarias
-            malla=Mesh(ncells,self.mesh.ddx,Materials(self.set_materials))
+                materiales[i][0]=rnd_epsilon_r[i][k]
+                materiales[i][1]=rnd_sigma[i][k]
+        
+            malla=Mesh(ncells,self.mesh.ddx,Materials(materiales),self.s_par)
 
-            ex_k1, ex_k2, ex_film, _=FDTD(malla, self.s_par, self.pulse, self.time).FDTDLoop('no')
+            ex_k1, ex_k2, ex_film, _=FDTD(malla, self.pulse, self.time).FDTDLoop('no')
             
             #Film
             ex_film_avg += ex_film    
             ex_film_var += np.power(ex_film,2)
-            #Electric field in k1, k2
-            ex_k1_avg += ex_k1
-            ex_k2_avg += ex_k2
+
+            #RyT
+            R = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2)[0]
+            T = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2)[1]
+            R_avg += R
+            T_avg += T
+            R_std += np.power(R,2)
+            T_std += np.power(T,2)
+
 
             if (k % 10)==0:
                 print(k)
 
         
-        #Film
         ex_film_avg = ex_film_avg / self.mc_steps
         ex_film_var = (ex_film_var /self.mc_steps) - (np.power(ex_film_avg,2))
-        #E field in k1,k2
-        ex_k1_avg = ex_k1_avg / self.mc_steps
-        ex_k2_avg = ex_k2_avg / self.mc_steps
+        
+        R_avg = R_avg / self.mc_steps
+        T_avg = T_avg / self.mc_steps
+        R_std = (R_std /self.mc_steps) - (np.power(R_avg,2))
+        T_std = (T_std /self.mc_steps) - (np.power(T_avg,2))
 
-        return   ex_k1_avg, ex_k2_avg, ex_film_avg, ex_film_var
+        freq = Utilities().frequency(ex_k1, self.time)
+
+        return   R_avg, T_avg, R_std, T_std, freq, ex_film_avg, ex_film_var
 
 
 
 class Stochastic_FDTD:
-    def __init__(self, mesh, s_par):
+    def __init__(self, mesh):
         self.mesh=mesh
-        self.s_par=s_par
+        self.s_par=self.mesh.s_par
                
     def StandardDeviation_H(self,std_h,std_e):
         std_h[:] = std_h[:] - 0.5 * (std_e[:-1] - std_e[1:])
