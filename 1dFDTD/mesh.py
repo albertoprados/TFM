@@ -4,15 +4,14 @@ import math
 
 
 class Mesh:
-    def __init__(self, ncells, ddx, par, s_par):    
+    def __init__(self, ncells, pulso, par, s_par):    
         self.ncells=ncells
-        self.ddx=ddx
+        self.pulso=pulso
         self.par=par
         self.s_par=s_par
+        self.ddx=self.pulso.ddx()
+        self.dt=self.pulso.dt()
         
-    def dt(self):
-        return self.ddx/(2*sp.c)    
-    
     def FFTpoints(self):
         #250,700
         #110,140
@@ -23,14 +22,14 @@ class Mesh:
         eaf = np.empty(self.par.num_materials)
         #Coef. for update E equation
         ca = np.ones(self.ncells+1)
-        c_aux=(self.dt()/(self.ddx*sp.epsilon_0))*math.sqrt(sp.epsilon_0/sp.mu_0)
+        c_aux=(self.dt/(self.ddx*sp.epsilon_0))*math.sqrt(sp.epsilon_0/sp.mu_0)
         cb = np.ones(self.ncells+1) * c_aux
 
         #Coef. for update H equation
-        cc=(self.dt()/(sp.mu_0*self.ddx))*math.sqrt(sp.mu_0/sp.epsilon_0)
+        cc=(self.dt/(sp.mu_0*self.pulso.ddx()))*math.sqrt(sp.mu_0/sp.epsilon_0)
 
         for i in range(self.par.num_materials):     
-            eaf[i] = self.dt() * self.par.sigma()[i] \
+            eaf[i] = self.pulso.dt() * self.par.sigma()[i] \
                     /(2 * sp.epsilon_0 * self.par.epsilon_r()[i]) 
             ca[self.par.start_m()[i] : self.par.end_m()[i]] = \
                     (1 - eaf[i] ) / (1 + eaf[i] )

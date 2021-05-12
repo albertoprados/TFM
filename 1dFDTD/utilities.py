@@ -5,24 +5,41 @@ import math
 from mesh import Mesh, Materials
 
 class Source:
-    def __init__(self, sourcetype, delay, spread, freq, malla, k_ini):
+    def __init__(self, sourcetype,  freq, par, fraction_wl, spread, k_ini):
         self.sourcetype=sourcetype
-        self.delay=delay
+        self.freq=freq
+        self.par=par
+        self.fraction_wl=fraction_wl
         self.spread=spread
         self.k_ini=k_ini
-        self.freq=freq
-        self.malla=malla
+    
+
+    def ddx(self):
+        max_epsilon_r=np.max(self.par.epsilon_r())
+        #Shortest wavelength
+        wave_lenght= (speed_of_light / np.sqrt(max_epsilon_r)) / self.freq
+
+        ddx= wave_lenght / self.fraction_wl
+
+        return ddx
+
+    def dt(self):
+        return self.ddx()/(2*sp.c)      
 
     def pulse(self, time):
         
         self.time=time
-        
+        delay=self.spread * 5
+
         if self.sourcetype == 'gauss':
-            pulse = math.exp(-0.5*( (self.delay - time) / self.spread )**2)
+            pulse = math.exp(-0.5*( (time-delay) / self.spread )**2)
         
         if self.sourcetype == 'sin':
-            pulse = math.sin(2.0*np.pi*self.freq*self.malla.dt()*time)
+            pulse =math.sin(2.0*np.pi*self.freq*time)
 
+        if self.sourcetype == 'singauss':
+            pulse = (math.exp(-0.5*( (time-delay) / self.spread )**2))\
+                 * (math.sin(2.0*np.pi*self.freq*(time-delay)))
         return pulse
     
 

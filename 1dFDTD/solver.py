@@ -14,7 +14,7 @@ class FDTD:
         self.time=time
 
     def boundarymur(self,ex,ex_old):
-        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
+        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt, self.mesh.ddx
 
         c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
 
@@ -30,7 +30,7 @@ class FDTD:
         Stochastic_FDTD(self.mesh).StandardDeviation_H(std_h,std_e)
         
     def nsteps(self):
-        return int(self.time / self.mesh.dt())  
+        return int(self.time / self.mesh.dt)  
 
     def FDTDLoop(self, Stochastic_Analysis):
         self.Stochastic_Analysis=Stochastic_Analysis
@@ -70,7 +70,8 @@ class FDTD:
             ex_k1[time_step]=ex[k1]
             ex_k2[time_step]=ex[k2]
            
-            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)  
+            time=time_step*self.mesh.dt
+            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time)  
             
             self.boundarymur(ex,ex_old)  
             
@@ -82,7 +83,7 @@ class FDTD:
                 std_e_film[time_step][:]=std_e[:]
             
             
-            t= time_step + 1/2
+            t= time + (1/2)*self.mesh.dt
             hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
             hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
 
@@ -236,7 +237,7 @@ class Stochastic_FDTD:
 
 
     def BoundaryCondition(self,std_e,std_e_old):
-        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
+        ncells, dt, ddx= self.mesh.ncells, self.mesh.dt, self.mesh.ddx
 
         c_bound=(sp.c*dt-ddx)/(sp.c*dt+ddx)
 
@@ -251,7 +252,7 @@ class Stochastic_FDTD:
 
         for i in range(self.mesh.par.num_materials):     
             c_aux[i] = 2 * sp.epsilon_0 * self.mesh.par.epsilon_r()[i] + \
-                self.mesh.dt() * self.mesh.par.sigma()[i]   
+                self.mesh.dt * self.mesh.par.sigma()[i]   
         
         return c_aux
 
@@ -261,7 +262,7 @@ class Stochastic_FDTD:
 
         for i in range(self.mesh.par.num_materials):
             c1_coef[i] = ( (2 * sp.epsilon_0 * self.mesh.par.epsilon_r()[i] - \
-                self.mesh.dt() * self.mesh.par.sigma()[i]) \
+                self.mesh.dt * self.mesh.par.sigma()[i]) \
                 / self.coef_aux()[i] ) 
                 
 
@@ -271,11 +272,11 @@ class Stochastic_FDTD:
     
     def c2_StDe(self):
         c2_coef = np.empty(self.mesh.par.num_materials)
-        c2_malla = np.ones(self.mesh.ncells+1) * (self.mesh.dt()/ \
+        c2_malla = np.ones(self.mesh.ncells+1) * (self.mesh.dt/ \
             (self.mesh.ddx*sp.epsilon_0)) * math.sqrt(sp.epsilon_0/sp.mu_0)
                 
         for i in range(self.mesh.par.num_materials): 
-            c2_coef[i]= (2.0 * self.mesh.dt() / (self.mesh.ddx * self.coef_aux()[i])) \
+            c2_coef[i]= (2.0 * self.mesh.dt / (self.mesh.ddx * self.coef_aux()[i])) \
                         * math.sqrt(sp.epsilon_0/sp.mu_0)
 
             c2_malla[self.mesh.par.start_m()[i] : self.mesh.par.end_m()[i]]= c2_coef[i]     
@@ -287,7 +288,7 @@ class Stochastic_FDTD:
         c3_malla =  np.zeros(self.mesh.ncells+1)
 
         for i in range(self.mesh.par.num_materials):
-            c3_coef[i] = 4 * self.mesh.dt() * sp.epsilon_0 * \
+            c3_coef[i] = 4 * self.mesh.dt * sp.epsilon_0 * \
             (self.mesh.par.sigma()[i]*self.s_par.c_eps_E()[i]*self.s_par.std_eps_r()[i]-\
             self.mesh.par.epsilon_r()[i]*self.s_par.c_sigma_E()[i]*self.s_par.std_sigma()[i])\
             / (np.power(self.coef_aux()[i],2))    
@@ -301,9 +302,9 @@ class Stochastic_FDTD:
         c4_malla = np.zeros(self.mesh.ncells+1)
 
         for i in range(self.mesh.par.num_materials):
-            c4_coef[i] = ((2.0 * self.mesh.dt()/(self.mesh.ddx*self.coef_aux()[i]))\
+            c4_coef[i] = ((2.0 * self.mesh.dt/(self.mesh.ddx*self.coef_aux()[i]))\
                 *((2*sp.epsilon_0*self.s_par.std_eps_r()[i]*\
-                self.s_par.c_eps_H()[i] + self.mesh.dt()*self.s_par.std_sigma()[i] * \
+                self.s_par.c_eps_H()[i] + self.mesh.dt*self.s_par.std_sigma()[i] * \
                 self.s_par.c_sigma_H()[i])/self.coef_aux()[i])) * \
                 math.sqrt(sp.epsilon_0/sp.mu_0)           
 
