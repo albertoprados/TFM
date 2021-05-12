@@ -21,7 +21,7 @@ class Source:
 
         ddx= wave_lenght / self.fraction_wl
 
-        return ddx
+        return 0.0005
 
     def dt(self):
         return self.ddx()/(2*sp.c)      
