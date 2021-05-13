@@ -29,8 +29,14 @@ class Source:
 
 class Utilities:
     
-    def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2):
-        
+    def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2,time):
+        #Frequency
+        freq_min=0
+        freq_max=1.2e11
+
+        N=len(e1tk1_total)
+        freq= ((2*np.pi)/time) * np.arange(0,N)  
+
         #Hay que cancelar la parte incidente
         e1tk1_reflected = e1tk1_total - e2tk1  
         
@@ -39,23 +45,18 @@ class Utilities:
 
         e1wk2=np.fft.fft(e1tk2)
         e2wk2=np.fft.fft(e2tk2)
-    
+
+        e1wk1=e1wk1[(freq_min <= freq) & (freq < freq_max)]
+        e2wk1=e2wk1[(freq_min <= freq) & (freq < freq_max)]
+        e1wk2=e1wk2[(freq_min <= freq) & (freq < freq_max)]
+        e2wk2=e2wk2[(freq_min <= freq) & (freq < freq_max)]
+        freq=freq[(freq_min <= freq) & (freq < freq_max)]
+
         R=np.abs(e1wk1) / np.abs(e2wk1)
         T=np.abs(e1wk2) / np.abs(e2wk2)
         
-        
-        return  R, T
+        return  R, T, freq
     
-
-    def frequency(self, e1tk1, time): 
-        
-        N=len(e1tk1)
-        w= ((2*np.pi)/time) * np.arange(1,N+1)         
-        
-        #fq=(2*np.pi) * np.fft.fftfreq(len(e1tk1),dt)
-
-        return w
-
 
 
 class MultiPanel: 
@@ -97,6 +98,7 @@ class Panel:
         self.mesh=mesh
         self.mu_r = mu_r
         self.par=Materials([material])
+        self.eta_0 = np.sqrt(mu_0/epsilon_0)
 
     def thickness(self):
         return (self.par.end_m()-self.par.start_m())\
@@ -105,15 +107,15 @@ class Panel:
     def epsilon_c(self, omega):
         return self.par.epsilon_r()*epsilon_0 - complex(0,1)*self.par.sigma()/omega
 
-    def mu_c(self, omega):
+    def mu_c(self):
         return self.mu_r * mu_0
 
     def gamma(self, omega):
         return complex(0,1) * omega * \
-            np.sqrt(self.epsilon_c(omega) * self.mu_c(omega))
+            np.sqrt(self.epsilon_c(omega) * self.mu_c())
 
     def eta(self, omega):
-        return np.sqrt(self.mu_c(omega) / self.epsilon_c(omega))
+        return np.sqrt(self.mu_c() / self.epsilon_c(omega))
 
     def phi(self, omega):
         gd  = self.gamma(omega) * self.thickness()
@@ -123,13 +125,13 @@ class Panel:
 
     def _den(self, omega):
         phi = self.phi(omega)
-        return phi[0,0]*eta_0 + phi[0,1] + phi[1,0]*eta_0**2 + phi[1,1]*eta_0
+        return phi[0,0]*self.eta_0 + phi[0,1] + phi[1,0]*self.eta_0**2 + phi[1,1]*self.eta_0
         
     def T(self, omega):
-        return  2*eta_0 / self._den(omega)
+        return  2*self.eta_0 / self._den(omega)
 
     def R(self, omega): 
         phi = self.phi(omega)
         return \
-            (phi[0,0]*eta_0 + phi[0,1] - phi[1,0]*eta_0**2 - phi[1,1]*eta_0) / \
+            (phi[0,0]*self.eta_0 + phi[0,1] - phi[1,0]*self.eta_0**2 - phi[1,1]*self.eta_0) / \
             self._den(omega)

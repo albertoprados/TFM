@@ -1,3 +1,4 @@
+from matplotlib.lines import Line2D
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
@@ -69,13 +70,32 @@ class Animator:
         plt.legend()
         plt.show()
 
-    def fftgraph_mc(self, freq, r, t, r_std, t_std, r_panel, t_panel):
-
+    def fftgraph_mc(self, freq, r, t, r_panel, t_panel):
+        """
         plt.errorbar(freq, r, yerr= r_std)
         plt.errorbar(freq, t, yerr= t_std)
+        """
+        """
+        plt.hist(r,stacked=True)
+        plt.hist(t,stacked=True)
+        """
+        plt.plot(freq,r)
+        plt.plot(freq,t)
+        """
+        with plt.style.context('classic'):
+            for row in r:
+                plt.plot(freq, row)
         
+        with plt.style.context('classic'):
+            for row2 in t:
+                plt.plot(freq, row2)
+        """
+
+
+
         plt.plot(freq,r_panel, label='R Panel')
-        plt.plot(freq,t_panel, label='T Panel')
+        plt.plot(freq,t_panel,label='T Panel')
+         
         #plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
         plt.ylim(-0.2,2.2)
