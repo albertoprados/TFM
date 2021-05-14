@@ -366,9 +366,28 @@ In this equation an approximation has been made, the correlation coefficients ha
 MPI is a library used for parallel processing [Book EM simulation techniques based on the FDTD method]
 
 
-
-
-
+\section{Standard Deviation in Reflectance and Transmittance}
+With the previous formalism, it has been possible to obtain the standard deviation of the fields. Now, the standard deviation of the reflection and transmission coefficient is sought. To perform this task, the lineal propagation of errors is going to be employed. Given a quantity $X$, which is a function of other variables $X=f(A,B,...)$, the error of $X$ ($\Delta X$ which is the same as $\sigma_x$) is obtained in the following way:
+\begin{equation}
+\Delta X= \bigg |\frac{\partial X}{\partial A} \bigg | \Delta A + \bigg |\frac{\partial X}{\partial B} \bigg | \Delta B + ...
+\end{equation}
+Applying this to the reflection coefficient 
+\begin{equation}
+R=\frac{E(\omega)}{E_{src}(\omega)},
+\end{equation}
+where $E_{src}$ is just the source field, the $\Delta R$ will be computed (after that, the modulus of $R$ and $\Delta R$ will be obtained for the representation). The source field has no standard deviation so it will be treated as a constant. The first step is to write $\Delta R$ as
+\begin{equation} \label{error RyT}
+\Delta R= \bigg |  \frac{\partial R}{\partial E(\omega)} \bigg | \Delta E (\omega)=\bigg |\frac{1}{E_{src}(\omega)} \bigg | \bigg |  \frac{\partial E(\omega)}{\partial E(t)} \bigg | \Delta E(t).
+\end{equation} 
+Now, as $E(\omega)$ is obtained using the discrete Fourier transform (DFT) (\textbf{realmente con la FFT, supongo que el resultado debe ser el mismo}):
+\begin{equation}
+E_k(\omega)=\sum_{n=0}^{N-1} e^{-i\frac{2\pi}{N} k n} E_n(t),
+\end{equation} 
+using this expression, the error $\Delta E_k(\omega)$, which is the same for all $k$, is:
+\begin{equation}
+\Delta E_k(\omega)=\bigg |\frac{\partial E_k(\omega)}{\partial E_0(t)}\bigg | \Delta E_0(t) + \bigg |\frac{\partial E_k(\omega)}{\partial E_1(t)}\bigg | \Delta E_1(t) + ... = \Delta E_0(t) + \Delta E_1(t) + ...
+\end{equation}
+Finally, the error of the coefficients $R$ and $T$ is obtained with \ref{error RyT}.
 
 
 %\chapter{Los enunciados}
