@@ -57,6 +57,45 @@ class Utilities:
         
         return  R, T, freq
     
+    def FFT_std(self, stde_k1, stde_k2, e2_k1, e2_k2, time):
+        #Frequency
+        freq_min=0
+        freq_max=1.2e11
+
+        N=len(stde_k1)
+        freq= ((2*np.pi)/time) * np.arange(0,N)  
+        """ 
+        stdew_k1=sum(np.power(stde_k1,2))
+        stdew_k2=sum(np.power(stde_k2,2))
+        print( np.sqrt(stdew_k1))
+        for i in range(len(stde_k1)):
+            if (i%100)==0:
+                        print(i)
+            for j in range(len(stde_k1)):
+                if i != j:
+                    stdew_k1 += stde_k1[i]*stde_k1[j]
+                    stdew_k2 += stde_k2[i]*stde_k2[j]
+        stdew_k1=np.sqrt(stdew_k1)       
+        stdew_k2=np.sqrt(stdew_k2)          
+        print( stdew_k1)
+        """
+        stdew_k1=np.abs(np.fft.fft(stde_k1))
+        stdew_k2=np.abs(np.fft.fft(stde_k2))
+
+
+        e2w_k1=np.fft.fft(e2_k1)
+        e2w_k2=np.fft.fft(e2_k2)
+
+        stdew_k1=stdew_k1[(freq_min <= freq) & (freq < freq_max)]
+        stdew_k2=stdew_k2[(freq_min <= freq) & (freq < freq_max)]
+        e2w_k1=e2w_k1[(freq_min <= freq) & (freq < freq_max)]
+        e2w_k2=e2w_k2[(freq_min <= freq) & (freq < freq_max)]
+        freq=freq[(freq_min <= freq) & (freq < freq_max)]
+
+        Std_R= stdew_k1 / np.abs(e2w_k1)
+        Std_T= stdew_k2 / np.abs(e2w_k2)   
+
+        return Std_R, Std_T 
 
 
 class MultiPanel: 

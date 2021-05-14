@@ -45,13 +45,15 @@ class FDTD:
         #Fourier transform
         ex_k1=np.empty(self.nsteps()+1)
         ex_k2=np.empty(self.nsteps()+1)
-        
+        std_e_k1=np.empty(self.nsteps()+1)
+        std_e_k2=np.empty(self.nsteps()+1)
 
         #Standard Deviation
         if Stochastic_Analysis == 'yes':
             std_e=np.zeros(self.mesh.ncells+1)
             std_h=np.zeros(self.mesh.ncells)
             std_e_old=std_e=np.zeros(self.mesh.ncells+1)
+            
 
         #std_e_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))    
 
@@ -79,6 +81,8 @@ class FDTD:
 
             if Stochastic_Analysis == 'yes':
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
+                std_e_k1[time_step]=std_e[k1]
+                std_e_k2[time_step]=std_e[k2]
                 #std_e_film[time_step][:]=std_e[:]
             
             
@@ -88,7 +92,7 @@ class FDTD:
 
             
 
-        return ex_k1, ex_k2, #ex_film, np.power(std_e_film ,2)
+        return ex_k1, ex_k2, std_e_k1, std_e_k2 #ex_film, np.power(std_e_film ,2)
 
 
 

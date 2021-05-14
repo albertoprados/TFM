@@ -1,4 +1,4 @@
-from utilities import Source, Utilities, Panel, MultiPanel
+from utilities import Source, Utilities, MultiPanel
 from mesh import Mesh, Materials, S_Materials
 from solver import FDTD, MonteCarlo 
 from viewer import Animator
@@ -24,7 +24,7 @@ s_muscle=[4.6,0.1,1,1,1,1]
 s_materiales=[s_fat,s_skin,s_muscle]
 par_s_materiales=S_Materials(s_materiales)
 #---------------------------------
-s_material=[[0.8,0.01,1,1,1,1]]
+s_material=[[0.5,0.01,1,1,1,1]]
 par_s_material=S_Materials(s_material)
 
 
@@ -60,27 +60,27 @@ pulso=Source('gauss',40,12,2e9,malla1,20)
 #--------------------------------------------
 
 #Ejecucion y visualizacion
-"""
-ex1_k1, ex1_k2 = FDTD(malla1,pulso,time).FDTDLoop('yes')
-ex2_k1, ex2_k2 = FDTD(malla2,pulso,time).FDTDLoop('no')
+
+ex1_k1, ex1_k2, stde_k1, stde_k2 = FDTD(malla1,pulso,time).FDTDLoop('yes')
+ex2_k1, ex2_k2, _, _ = FDTD(malla2,pulso,time).FDTDLoop('no')
 
 r, t, freq= Utilities().FFT(ex1_k1,ex2_k1,ex1_k2,ex2_k2,time)
-
+std_r, std_t= Utilities().FFT_std(stde_k1,stde_k2,ex2_k1,ex2_k2,time)
 #Resultado Analitico
 r_panel, t_panel=MultiPanel(material, malla1).RyT(freq+1)
 
 #Visualizacion
-Animator().fftgraph(freq,r,t,r_panel,t_panel)
+Animator().fftgraph(freq,r,t,std_r,std_t,r_panel,t_panel)
 
 #Animator().animationex(ex_film,malla1,'ex')
 #Animator().animationex(std_e_film,malla1,'std')
-"""
+
 #--------------------------------------------
 #--------------------------------------------
 
 
 #Monte Carlo
-
+"""
 #ex_film_mc
 #var_e_film_mc
 r_mc, t_mc, freq_mc = MonteCarlo(malla1, pulso, time, 10).MC(material,void)
@@ -92,3 +92,4 @@ r_mc, t_mc, freq_mc = MonteCarlo(malla1, pulso, time, 10).MC(material,void)
 r_panel, t_panel=MultiPanel(material, malla1).RyT(freq_mc+1)
 
 Animator().fftgraph_mc(freq_mc,r_mc,t_mc,r_panel,t_panel)
+"""

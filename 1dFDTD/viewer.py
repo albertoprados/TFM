@@ -50,11 +50,10 @@ class Animator:
         plt.draw()
         plt.show()    
    
-    def fftgraph(self, freq, r, t, r_panel, t_panel):
-        #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-        #rc('text', usetex=True)  
-        plt.plot(freq,r, label='R')
-        plt.plot(freq,t, label='T')
+    def fftgraph(self, freq, r, t, std_r, std_t, r_panel, t_panel):
+        plt.errorbar(freq, t, yerr= std_t)
+        plt.errorbar(freq, r, yerr= std_r)
+       
         
         plt.plot(freq,r_panel, label='R Panel')
         plt.plot(freq,t_panel, label='T Panel')
