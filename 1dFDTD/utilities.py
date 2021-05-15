@@ -64,10 +64,10 @@ class Utilities:
 
         N=len(stde_k1)
         freq= ((2*np.pi)/time) * np.arange(0,N)  
-        """ 
+        """
         stdew_k1=sum(np.power(stde_k1,2))
         stdew_k2=sum(np.power(stde_k2,2))
-        print( np.sqrt(stdew_k1))
+       
         for i in range(len(stde_k1)):
             if (i%100)==0:
                         print(i)
@@ -77,11 +77,41 @@ class Utilities:
                     stdew_k2 += stde_k2[i]*stde_k2[j]
         stdew_k1=np.sqrt(stdew_k1)       
         stdew_k2=np.sqrt(stdew_k2)          
-        print( stdew_k1)
         """
-        stdew_k1=np.abs(np.fft.fft(stde_k1))
-        stdew_k2=np.abs(np.fft.fft(stde_k2))
+        
+        
+        stdew_k1=np.fft.fft(stde_k1)
+        stdew_k2=np.fft.fft(stde_k2)
+        
+        """
+        stdew_k1=np.zeros(N,dtype=complex)
+        stdew_k2=np.zeros(N,dtype=complex)
+        fourier_coef=np.zeros(N,dtype=complex)
+        coef=np.exp((-complex(0,1)*2*np.pi)/N)
 
+        for k in range(N):
+            fourier_corr_k1=0 
+            fourier_corr_k2=0
+            if (k%100)==0:
+                print(k)
+            for i in range(N):
+                if (i%100)==0:
+                    print(i)
+                a_i= np.power(coef,k*i)   
+                fourier_coef[i]=np.power(a_i,2)
+                for j in range(N):
+                    if j>i :
+                        a_j= np.power(coef,k*j) 
+                        fourier_corr_k1 += 2 * a_i * a_j * stde_k1[i] * stde_k1[j]
+                        fourier_corr_k2 += 2 * a_i * a_j * stde_k2[i] * stde_k2[j]
+
+
+            stdew_k1[k]=np.dot(fourier_coef,np.power(stde_k1,2)) + fourier_corr_k1    
+            stdew_k2[k]=np.dot(fourier_coef,np.power(stde_k2,2)) + fourier_corr_k2    
+            
+        stdew_k1=np.sqrt(stdew_k1)
+        stdew_k2=np.sqrt(stdew_k2)
+        """
 
         e2w_k1=np.fft.fft(e2_k1)
         e2w_k2=np.fft.fft(e2_k2)
@@ -92,8 +122,8 @@ class Utilities:
         e2w_k2=e2w_k2[(freq_min <= freq) & (freq < freq_max)]
         freq=freq[(freq_min <= freq) & (freq < freq_max)]
 
-        Std_R= stdew_k1 / np.abs(e2w_k1)
-        Std_T= stdew_k2 / np.abs(e2w_k2)   
+        Std_R= np.abs(stdew_k1) / np.abs(e2w_k1)
+        Std_T= np.abs(stdew_k2) / np.abs(e2w_k2)   
 
         return Std_R, Std_T 
 
