@@ -32,7 +32,7 @@ class Utilities:
     def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2,time):
         #Frequency
         freq_min=0
-        freq_max=1.2e11
+        freq_max=6e10
 
         N=len(e1tk1_total)
         freq= ((2*np.pi)/time) * np.arange(0,N)  
@@ -60,59 +60,14 @@ class Utilities:
     def FFT_std(self, stde_k1, stde_k2, e2_k1, e2_k2, time):
         #Frequency
         freq_min=0
-        freq_max=1.2e11
+        freq_max=6e10
 
         N=len(stde_k1)
         freq= ((2*np.pi)/time) * np.arange(0,N)  
-        """
-        stdew_k1=sum(np.power(stde_k1,2))
-        stdew_k2=sum(np.power(stde_k2,2))
-       
-        for i in range(len(stde_k1)):
-            if (i%100)==0:
-                        print(i)
-            for j in range(len(stde_k1)):
-                if i != j:
-                    stdew_k1 += stde_k1[i]*stde_k1[j]
-                    stdew_k2 += stde_k2[i]*stde_k2[j]
-        stdew_k1=np.sqrt(stdew_k1)       
-        stdew_k2=np.sqrt(stdew_k2)          
-        """
-        
         
         stdew_k1=np.fft.fft(stde_k1)
         stdew_k2=np.fft.fft(stde_k2)
         
-        """
-        stdew_k1=np.zeros(N,dtype=complex)
-        stdew_k2=np.zeros(N,dtype=complex)
-        fourier_coef=np.zeros(N,dtype=complex)
-        coef=np.exp((-complex(0,1)*2*np.pi)/N)
-
-        for k in range(N):
-            fourier_corr_k1=0 
-            fourier_corr_k2=0
-            if (k%100)==0:
-                print(k)
-            for i in range(N):
-                if (i%100)==0:
-                    print(i)
-                a_i= np.power(coef,k*i)   
-                fourier_coef[i]=np.power(a_i,2)
-                for j in range(N):
-                    if j>i :
-                        a_j= np.power(coef,k*j) 
-                        fourier_corr_k1 += 2 * a_i * a_j * stde_k1[i] * stde_k1[j]
-                        fourier_corr_k2 += 2 * a_i * a_j * stde_k2[i] * stde_k2[j]
-
-
-            stdew_k1[k]=np.dot(fourier_coef,np.power(stde_k1,2)) + fourier_corr_k1    
-            stdew_k2[k]=np.dot(fourier_coef,np.power(stde_k2,2)) + fourier_corr_k2    
-            
-        stdew_k1=np.sqrt(stdew_k1)
-        stdew_k2=np.sqrt(stdew_k2)
-        """
-
         e2w_k1=np.fft.fft(e2_k1)
         e2w_k2=np.fft.fft(e2_k2)
 

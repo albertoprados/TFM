@@ -38,20 +38,20 @@ time=2e-8
 
 #Parametros de la malla
 #Malla 3 materiales
-"""
+
 void=[[1,0,335,659]]
 par_void=Materials(void)
 malla1=Mesh(800,0.0005,par_materiales,par_s_materiales)
 malla2=Mesh(800,0.0005,par_void,par_s_void)
-"""
+
 #-------------------------------------------
 #Malla 1 material
-
+"""
 void=[[1,0,110,140]]
 par_void=Materials(void)
 malla1=Mesh(200,0.001,par_material,par_s_material)
 malla2=Mesh(200,0.001,par_void,par_s_void)
-
+"""
 
 #Parametros del pulso
 pulso=Source('gauss',40,12,2e9,malla1,20)
@@ -67,7 +67,7 @@ ex2_k1, ex2_k2, _, _ = FDTD(malla2,pulso,time).FDTDLoop('no')
 r, t, freq= Utilities().FFT(ex1_k1,ex2_k1,ex1_k2,ex2_k2,time)
 std_r, std_t= Utilities().FFT_std(stde_k1,stde_k2,ex2_k1,ex2_k2,time)
 #Resultado Analitico
-r_panel, t_panel=MultiPanel(material, malla1).RyT(freq+1)
+r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq+1)
 
 #Visualizacion
 Animator().fftgraph(freq,r,t,std_r,std_t,r_panel,t_panel)

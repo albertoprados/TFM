@@ -367,27 +367,28 @@ MPI is a library used for parallel processing [Book EM simulation techniques bas
 
 
 \section{Standard Deviation in Reflectance and Transmittance}
-With the previous formalism, it has been possible to obtain the standard deviation of the fields. Now, the standard deviation of the reflection and transmission coefficient is sought. To perform this task, the lineal propagation of errors is going to be employed. Given a quantity $X$, which is a function of other variables $X=f(A,B,...)$, the error of $X$ ($\Delta X$ which is the same as $\sigma_x$) is obtained in the following way:
-\begin{equation}
-\Delta X= \bigg |\frac{\partial X}{\partial A} \bigg | \Delta A + \bigg |\frac{\partial X}{\partial B} \bigg | \Delta B + ...
+With the previous formalism, it has been possible to obtain the standard deviation of the fields. Now, the standard deviation of the reflection and transmission coefficient is sought. To perform this task, the propagation of errors is going to be employed. Given a quantity $X$, which is a function of other variables $X=f(x_1,x_2,...)$, the variance of $X$, in case $f$ is a linear combination of the variables $\left( f= \sum_i^n a_i x_i \right)$, is:
+\begin{equation}\label{error propagation variance}
+\sigma_X ^2 = \sum_i ^n a_i^2 \sigma_i^2 + \sum_i^n \sum_{j(j\neq i)} ^n a_i a_j \rho_{ij} \sigma_i \sigma_j .
 \end{equation}
 Applying this to the reflection coefficient 
 \begin{equation}
-R=\frac{E(\omega)}{E_{src}(\omega)},
+R=\frac{E(\omega)}{E_{src}(\omega)} ,
 \end{equation}
-where $E_{src}$ is just the source field, the $\Delta R$ will be computed (after that, the modulus of $R$ and $\Delta R$ will be obtained for the representation). The source field has no standard deviation so it will be treated as a constant. The first step is to write $\Delta R$ as
+where $E_{src}$ is just the source field, the $\sigma_R$ will be computed (after that, the modulus of $R$ and $\sigma_R$ will be obtained for the representation). The source field has no standard deviation so it will be treated as a constant. The first step is to write $\sigma_R$ as
 \begin{equation} \label{error RyT}
-\Delta R= \bigg |  \frac{\partial R}{\partial E(\omega)} \bigg | \Delta E (\omega)=\bigg |\frac{1}{E_{src}(\omega)} \bigg | \bigg |  \frac{\partial E(\omega)}{\partial E(t)} \bigg | \Delta E(t).
+\sigma_R= \frac{\partial R}{\partial E(\omega)} \sigma_{E(\omega)}
 \end{equation} 
-Now, as $E(\omega)$ is obtained using the discrete Fourier transform (DFT) (\textbf{realmente con la FFT, supongo que el resultado debe ser el mismo}):
+Now, as $E(\omega)$ is obtained using the discrete Fourier transform (DFT), which is a linear combination of the electric fields in time space, as the next expression shows, equation \ref{error propagation variance} can be applied.
 \begin{equation}
-E_k(\omega)=\sum_{n=0}^{N-1} e^{-i\frac{2\pi}{N} k n} E_n(t),
+E_k(\omega)=\sum_{n=0}^{N-1} e^{-i\frac{2\pi}{N} k n} E_n(t).
 \end{equation} 
-using this expression, the error $\Delta E_k(\omega)$, which is the same for all $k$, is:
+The coefficients of the Fourier transform can be identified with the $a's$ in \ref{error propagation variance}, where the second term is the covariance written in terms of the correlation $\rho_{ij}$. In the S-FDTD formalism the correlations between electric fields at different times is high and it is assumed to be one [24(Stochastic FDTD Phd)]. Using this, expression \ref{error propagation variance} can be written as a perfect square using the multinomial theorem:
 \begin{equation}
-\Delta E_k(\omega)=\bigg |\frac{\partial E_k(\omega)}{\partial E_0(t)}\bigg | \Delta E_0(t) + \bigg |\frac{\partial E_k(\omega)}{\partial E_1(t)}\bigg | \Delta E_1(t) + ... = \Delta E_0(t) + \Delta E_1(t) + ...
+\sigma_X=\sum_i ^n a_i \sigma_i,
 \end{equation}
-Finally, the error of the coefficients $R$ and $T$ is obtained with \ref{error RyT}.
+so the standard deviation of the Fourier transform of the fields is the Fourier transform of the standard deviations, which could have also been viewed as the linearity in the Fourier Transform.
+Finally, the standard deviation of the coefficients $R$ and $T$ is obtained with \ref{error RyT}.
 
 
 %\chapter{Los enunciados}

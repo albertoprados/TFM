@@ -59,7 +59,7 @@ class Animator:
         plt.plot(freq,t_panel, label='T Panel')
         #plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
-        plt.ylim(-0.2,2.2)
+        plt.ylim(-0.2,1.2)
         #plt.xlim(0, 1.5e11)
         
         plt.xlabel('Frequency w')
@@ -97,7 +97,7 @@ class Animator:
          
         #plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
-        plt.ylim(-0.2,2.2)
+        plt.ylim(-0.2,1.2)
         #plt.xlim(0, 1.5e11)
         
         plt.xlabel('Frequency w')
