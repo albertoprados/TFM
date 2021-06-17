@@ -145,7 +145,7 @@ class MonteCarlo:
             for k in range(n):
                 #Propuesta 
                 y=rnd_eps[i][k]+np.random.uniform(-delta[i][0],delta[i][0])
-                z=rnd_sigma[i][k]+np.random.uniform(-delta[i][1],delta_sigma[i][1])
+                z=rnd_sigma[i][k]+np.random.uniform(-delta[i][1],delta[i][1])
 
                 if np.random.rand() < min(1,self.pdf(y,eps_r[i],std_eps[i]) \
                     /self.pdf(rnd_eps[i][k],eps_r[i],std_eps[i])):
@@ -175,20 +175,22 @@ class MonteCarlo:
 
         #E auxiliar FFT
         malla_aux=Mesh(ncells, self.mesh.ddx, Materials(void), self.s_par)
-        ex2_k1, ex2_k2=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('no')       
+        ex2_k1, ex2_k2, _, _=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('no')       
 
-        ex_k1, ex_k2=FDTD(self.mesh, self.pulse, self.time).FDTDLoop('no')
+        ex_k1, ex_k2,_,_=FDTD(self.mesh, self.pulse, self.time).FDTDLoop('no')
 
         freq =  Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[2]
-        R=np.zeros((len(freq),self.mc_steps))
-        T=np.zeros((len(freq),self.mc_steps))
+        #All coefficients R&T
+        #R=np.zeros((len(freq),self.mc_steps))
+        #T=np.zeros((len(freq),self.mc_steps))
 
-        """
+        R=np.zeros(len(freq))
+        T=np.zeros(len(freq))
         R_avg=np.zeros(len(freq))
         T_avg=np.zeros(len(freq))
         R_std=np.zeros(len(freq))
         T_std=np.zeros(len(freq))
-        """
+        
 
         for k in range(self.mc_steps):
             for i in range(self.n_materials):
@@ -197,37 +199,39 @@ class MonteCarlo:
         
             malla=Mesh(ncells,self.mesh.ddx,Materials(materiales),self.s_par)
 
-            ex_k1, ex_k2=FDTD(malla, self.pulse, self.time).FDTDLoop('no')
+            ex_k1, ex_k2,_,_=FDTD(malla, self.pulse, self.time).FDTDLoop('no')
             
             #Film
             #ex_film_avg += ex_film    
             #ex_film_var += np.power(ex_film,2)
 
-            #RyT
-            R[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
-            T[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
+            #RyT all coeficients
+            #R[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
+            #T[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
 
-            """
+            R = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
+            T = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
+
             R_avg += R
             T_avg += T
             R_std += np.power(R,2)
             T_std += np.power(T,2)
-            """
+            
 
-            if (k % 10)==0:
+            if (k % 500)==0:
                 print(k)
 
         
         #ex_film_avg = ex_film_avg / self.mc_steps
         #ex_film_var = (ex_film_var /self.mc_steps) - (np.power(ex_film_avg,2))
-        """
+        
         R_avg = R_avg / self.mc_steps
         T_avg = T_avg / self.mc_steps
         R_std = (R_std /self.mc_steps) - (np.power(R_avg,2))
         T_std = (T_std /self.mc_steps) - (np.power(T_avg,2))
-        """
+        
 
-        return   R, T, freq, #ex_film_avg, ex_film_var
+        return   R_avg, T_avg, R_std, T_std, freq
 
 
 

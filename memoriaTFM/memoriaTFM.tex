@@ -367,19 +367,19 @@ MPI is a library used for parallel processing [Book EM simulation techniques bas
 
 
 \section{Standard Deviation in Reflectance and Transmittance}
-With the previous formalism, it has been possible to obtain the standard deviation of the fields. Now, the standard deviation of the reflection and transmission coefficient is sought. To perform this task, the propagation of errors is going to be employed. Given a quantity $X$, which is a function of other variables $X=f(x_1,x_2,...)$, the variance of $X$, in case $f$ is a linear combination of the variables $\left( f= \sum_i^n a_i x_i \right)$, is:
+With the previous formalism, it has been possible to obtain the standard deviation of the fields. Now, the standard deviation of the reflection and transmission coefficient is sought. To perform this task, the propagation of errors is going to be employed. Given a quantity $X$, which is a function of other variables $X=f(x_1,x_2,...)$, the variance of $X$, in case $f$ is a linear combination of the variables $\left( f= \sum_i^n a_i x_i \right)$, is [John R.Taylor An introduction to error analysis]:
 \begin{equation}\label{error propagation variance}
 \sigma_X ^2 = \sum_i ^n a_i^2 \sigma_i^2 + \sum_i^n \sum_{j(j\neq i)} ^n a_i a_j \rho_{ij} \sigma_i \sigma_j .
 \end{equation}
 Applying this to the reflection coefficient 
 \begin{equation}
-R=\frac{E(\omega)}{E_{src}(\omega)} ,
+R=\frac{E_{ref}(\omega)}{E_{src}(\omega)} ,
 \end{equation}
 where $E_{src}$ is just the source field, the $\sigma_R$ will be computed (after that, the modulus of $R$ and $\sigma_R$ will be obtained for the representation). The source field has no standard deviation so it will be treated as a constant. The first step is to write $\sigma_R$ as
 \begin{equation} \label{error RyT}
-\sigma_R= \frac{\partial R}{\partial E(\omega)} \sigma_{E(\omega)}
+\sigma_R= \frac{\partial R}{\partial E_{ref}(\omega)} \sigma_{E_{ref}(\omega)}
 \end{equation} 
-Now, as $E(\omega)$ is obtained using the discrete Fourier transform (DFT), which is a linear combination of the electric fields in time space, as the next expression shows, equation \ref{error propagation variance} can be applied.
+Now, as $E_{ref}(\omega)$ is obtained using the discrete Fourier transform (DFT), which is a linear combination of the electric fields in time space, as the next expression shows, equation \ref{error propagation variance} can be applied.
 \begin{equation}
 E_k(\omega)=\sum_{n=0}^{N-1} e^{-i\frac{2\pi}{N} k n} E_n(t).
 \end{equation} 
@@ -388,7 +388,7 @@ The coefficients of the Fourier transform can be identified with the $a's$ in \r
 \sigma_X=\sum_i ^n a_i \sigma_i,
 \end{equation}
 so the standard deviation of the Fourier transform of the fields is the Fourier transform of the standard deviations, which could have also been viewed as the linearity in the Fourier Transform.
-Finally, the standard deviation of the coefficients $R$ and $T$ is obtained with \ref{error RyT}.
+Finally, the standard deviation of the coefficients $R$ and, in an analogous way, $T$, is obtained with \ref{error RyT}.
 
 
 %\chapter{Los enunciados}
