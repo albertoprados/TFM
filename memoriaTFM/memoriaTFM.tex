@@ -245,6 +245,19 @@
     Analysis of subcell phenomenology in the Yee algorithm using the FDTD method...
 \end{otherlanguage}
 
+\chapter{Introduction}
+In this work an analysis of the Stochastic FDTD method is presented. The S-FDTD method is an approach for computing the variance in the electromagnetic fields due to the uncertainties in electrical properties. Those may vary because of uncertainty in the measurements, variations in materials, variations in manufacturing, etc.
+The traditional FDTD method uses electrical properties such as permittivity and conductivity as inputs and return the average values of the fields. So, if our goal is to compute other statistical quantities such as the variance of the field, although other statistical properties may also be of interest such as $90\%$ confidence intervals, before the development of the S-FDTD we would be bound to use the Monte Carlo method. This implies running a huge number of simulations to obtain statistics for the fields, this can be made in one dimensional simulations but would be impractical for three dimensional ones.
+
+The S-FDTD takes the same two equations of the FDTD method as a starting point, namely the discretized version of Faraday's and Ampere's law. Next, the delta method, which can be seen as a Taylor's expansion, is used to derive expressions for the mean and variance values. The mean values for this method are the same as those obtained with the FDTD as expected; to get this, higher order terms are neglected in the expansion. For the variance, a series of approximations are made as well, and the procedure is much more complex. At the end of the method two expressions are derived for the electric and magnetic field. In this expressions appear some unknown quantities, those are the correlation coefficients between the electrical properties with the fields. 
+
+The main goal of this work is to explore this correlations. In principle we can not know anything else that they are between $-1$ and $1$. These coefficients vary with time and a model to try to find them before or within making any simulations have not been proposed and this question could have no answer. Until now, several approximations have been tried to estimate the correlation coefficients, for example, assuming a value of one, which overestimate the result given by the Monte Carlo method. Therefore, this work will seek to understand the nature of this correlations which could be the first step to propose an accurate method to compute these coefficients.
+
+
+
+
+
+
 
 
 \chapter{Introduction to the FDTD method.}

@@ -50,13 +50,13 @@ class Animator:
         plt.draw()
         plt.show()    
    
-    def fftgraph(self, freq, r , std_r, r_panel):
-        #plt.errorbar(freq, t, yerr= std_t)
+    def fftgraph(self, freq, r, t , std_r, std_t, r_panel, t_panel):
+        plt.errorbar(freq, t, yerr= std_t)
         plt.errorbar(freq, r, yerr= std_r)
        
         
         plt.plot(freq,r_panel, label='R Panel')
-        #plt.plot(freq,t_panel, label='T Panel')
+        plt.plot(freq,t_panel, label='T Panel')
         
         #plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
