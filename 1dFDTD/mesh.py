@@ -39,6 +39,24 @@ class Mesh:
        
         return  ca, cb, cc
 
+    def cellsproperties(self,epsilon_r,sigma):
+        eaf = np.empty(self.ncells+1)
+        #Coef. for update E equation
+        ca = np.ones(self.ncells+1)
+        c_aux=(self.dt()/(self.ddx*sp.epsilon_0))*math.sqrt(sp.epsilon_0/sp.mu_0)
+        cb = np.ones(self.ncells+1) * c_aux
+
+        #Coef. for update H equation
+        cc=(self.dt()/(sp.mu_0*self.ddx))*math.sqrt(sp.mu_0/sp.epsilon_0)
+
+            
+        eaf = self.dt() * sigma / (2 * sp.epsilon_0 * epsilon_r) 
+        ca = (1 - eaf ) / (1 + eaf )
+        cb = c_aux / (epsilon_r * (1 + eaf ))
+       
+        return  ca, cb, cc
+    
+
     
 
 

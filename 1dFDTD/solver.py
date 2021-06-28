@@ -32,15 +32,16 @@ class FDTD:
     def nsteps(self):
         return int(self.time / self.mesh.dt())  
 
+
     def FDTDLoop(self, Stochastic_Analysis):
         self.Stochastic_Analysis=Stochastic_Analysis
-
+        
         ex=np.zeros(self.mesh.ncells+1)
         hy=np.zeros(self.mesh.ncells)
         ex_old=np.zeros(self.mesh.ncells+1)
 
         #Saving values for film
-        #ex_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))
+        ex_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))
 
         #Fourier transform
         ex_k1=np.empty(self.nsteps()+1)
@@ -55,8 +56,7 @@ class FDTD:
             std_e_old=std_e=np.zeros(self.mesh.ncells+1)
             
 
-        #std_e_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))    
-
+        std_e_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))    
 
         ca, cb, cc = self.mesh.materials()
         k1, k2=self.mesh.FFTpoints()
@@ -66,7 +66,7 @@ class FDTD:
             ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
-            #ex_film[time_step][:]=ex[:]
+            ex_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
             ex_k1[time_step]=ex[k1]
@@ -83,8 +83,47 @@ class FDTD:
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
                 std_e_k1[time_step]=std_e[k1]
                 std_e_k2[time_step]=std_e[k2]
-                #std_e_film[time_step][:]=std_e[:]
+                std_e_film[time_step][:]=std_e[:]
             
+            
+            t= time_step + 1/2
+            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
+            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
+
+        return ex_k1, ex_k2, std_e_k1, std_e_k2, ex_film #np.power(std_e_film ,2)
+
+
+    def MC_FDTD(self, rnd_epsilon_r, rnd_sigma):
+        ex=np.zeros(self.mesh.ncells+1)
+        hy=np.zeros(self.mesh.ncells)
+        ex_old=np.zeros(self.mesh.ncells+1)
+
+        #Fourier transform
+        ex_k1=np.empty(self.nsteps()+1)
+        ex_k2=np.empty(self.nsteps()+1)
+
+        #Saving values for film
+        ex_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))
+          
+        ca, cb, cc = self.mesh.cellsproperties(rnd_epsilon_r, rnd_sigma)
+        k1, k2=self.mesh.FFTpoints()
+
+        for time_step in range(self.nsteps()):
+            ex_old=copy.deepcopy(ex)
+            ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
+            
+            #Guardo los valores a representar
+            ex_film[time_step][:]=ex[:]
+            
+            #Guardo los valores para calcular la transformada
+            ex_k1[time_step]=ex[k1]
+            ex_k2[time_step]=ex[k2]
+           
+            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)  
+            
+            self.boundarymur(ex,ex_old)  
+            
+            hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])
             
             t= time_step + 1/2
             hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
@@ -92,8 +131,7 @@ class FDTD:
 
             
 
-        return ex_k1, ex_k2, std_e_k1, std_e_k2 #ex_film, np.power(std_e_film ,2)
-
+        return ex_k1, ex_k2, ex_film
 
 
 
@@ -107,7 +145,7 @@ class MonteCarlo:
         self.n_materials=self.mesh.par.num_materials
         
 
-    def Gaussian_Pdf(self):
+    def Gaussian_Pdf_materials(self):
         rnd_epsilon_r=np.zeros((self.n_materials,self.mc_steps))       
         rnd_sigma=np.zeros((self.n_materials,self.mc_steps))  
 
@@ -120,6 +158,103 @@ class MonteCarlo:
 
         return rnd_epsilon_r, rnd_sigma
 
+    def Gaussian_Pdf_cells(self):
+        ncells=self.mesh.ncells
+
+        rnd_epsilon_r=np.ones((ncells+1,self.mc_steps))       
+        rnd_sigma=np.zeros((ncells+1,self.mc_steps))  
+
+        for j in range(self.n_materials):
+            for i in range(self.mesh.par.start_m()[j],self.mesh.par.end_m()[j]):
+                    rnd_epsilon_r[i]=np.random.normal(self.mesh.par.epsilon_r()[j], \
+                        self.s_par.std_eps_r()[j],self.mc_steps)
+                    rnd_sigma[i]=np.random.normal(self.mesh.par.sigma()[j], \
+                        self.s_par.std_sigma()[j],self.mc_steps)
+        
+
+        return rnd_epsilon_r, rnd_sigma
+
+
+    def MC(self, materiales, void):
+        
+        nsteps=FDTD(self.mesh, self.pulse, self.time).nsteps()
+        ncells=self.mesh.ncells
+
+        #Por materiales
+        rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf_materials()
+
+        #Cada celda(punto a punto)
+        #rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf_cells()
+        
+        #Definicion de vectores medios
+        ex_film_avg=np.zeros((nsteps+1,ncells+1))
+        ex_film_var=np.zeros((nsteps+1,ncells+1))
+
+        #E auxiliar FFT
+        malla_aux=Mesh(ncells, self.mesh.ddx, Materials(void), self.s_par)
+        ex2_k1, ex2_k2, _, _, _=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('no')       
+
+        ex_k1, ex_k2,_,_,_=FDTD(self.mesh, self.pulse, self.time).FDTDLoop('no')
+
+        freq =  Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[2]
+        #All coefficients R&T
+        #R=np.zeros((len(freq),self.mc_steps))
+        #T=np.zeros((len(freq),self.mc_steps))
+
+        R=np.zeros(len(freq))
+        T=np.zeros(len(freq))
+        R_avg=np.zeros(len(freq))
+        T_avg=np.zeros(len(freq))
+        R_std=np.zeros(len(freq))
+        T_std=np.zeros(len(freq))
+        
+        #La malla se puede definir fuera del bucle(punto a punto)
+        #malla=Mesh(ncells,self.mesh.ddx,Materials(materiales),self.s_par)
+
+        for k in range(self.mc_steps):
+
+            #Por materiales
+            for i in range(self.n_materials):
+                materiales[i][0]=rnd_epsilon_r[i][k]
+                materiales[i][1]=rnd_sigma[i][k]
+            malla=Mesh(ncells,self.mesh.ddx,Materials(materiales),self.s_par)
+
+            #ex_k1, ex_k2, ex_film = FDTD(malla, self.pulse, self.time).MC_FDTD(rnd_epsilon_r[:,k],rnd_sigma[:,k])
+            ex_k1, ex_k2, _,_ ,ex_film= FDTD(malla, self.pulse, self.time).FDTDLoop('no')
+        
+            #Film
+            ex_film_avg += ex_film    
+            ex_film_var += np.power(ex_film,2)
+
+            #RyT all coeficients
+            #R[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
+            #T[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
+
+            R = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
+            T = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
+
+            R_avg += R
+            T_avg += T
+            R_std += np.power(R,2)
+            T_std += np.power(T,2)
+            
+
+            if (k % 500)==0:
+                print(k)
+
+        
+        ex_film_avg = ex_film_avg / self.mc_steps
+        ex_film_var = (ex_film_var /self.mc_steps) - (np.power(ex_film_avg,2))
+        
+        R_avg = R_avg / self.mc_steps
+        T_avg = T_avg / self.mc_steps
+        R_std = np.sqrt((R_std /self.mc_steps) - (np.power(R_avg,2)))
+        T_std = np.sqrt((T_std /self.mc_steps) - (np.power(T_avg,2)))
+        
+
+        return   R_avg, T_avg, R_std, T_std, freq ,ex_film_var
+
+    
 
     def pdf(self,x,mu,var):
         #Distribución eponencial
@@ -159,79 +294,7 @@ class MonteCarlo:
                 else:
                     rnd_sigma[i][k+1]=rnd_sigma[i][k]      
 
-        return rnd_eps, rnd_sigma
-
-
-    def MC(self, materiales, void):
-        
-        nsteps=FDTD(self.mesh, self.pulse, self.time).nsteps()
-        ncells=self.mesh.ncells
-
-        rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf()
-        
-        #Definicion de vectores medios
-        #ex_film_avg=np.zeros((nsteps+1,ncells+1))
-        #ex_film_var=np.zeros((nsteps+1,ncells+1))
-
-        #E auxiliar FFT
-        malla_aux=Mesh(ncells, self.mesh.ddx, Materials(void), self.s_par)
-        ex2_k1, ex2_k2, _, _=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('no')       
-
-        ex_k1, ex_k2,_,_=FDTD(self.mesh, self.pulse, self.time).FDTDLoop('no')
-
-        freq =  Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[2]
-        #All coefficients R&T
-        #R=np.zeros((len(freq),self.mc_steps))
-        #T=np.zeros((len(freq),self.mc_steps))
-
-        R=np.zeros(len(freq))
-        T=np.zeros(len(freq))
-        R_avg=np.zeros(len(freq))
-        T_avg=np.zeros(len(freq))
-        R_std=np.zeros(len(freq))
-        T_std=np.zeros(len(freq))
-        
-
-        for k in range(self.mc_steps):
-            for i in range(self.n_materials):
-                materiales[i][0]=rnd_epsilon_r[i][k]
-                materiales[i][1]=rnd_sigma[i][k]
-        
-            malla=Mesh(ncells,self.mesh.ddx,Materials(materiales),self.s_par)
-
-            ex_k1, ex_k2,_,_=FDTD(malla, self.pulse, self.time).FDTDLoop('no')
-            
-            #Film
-            #ex_film_avg += ex_film    
-            #ex_film_var += np.power(ex_film,2)
-
-            #RyT all coeficients
-            #R[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
-            #T[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
-
-            R = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
-            T = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
-
-            R_avg += R
-            T_avg += T
-            R_std += np.power(R,2)
-            T_std += np.power(T,2)
-            
-
-            if (k % 500)==0:
-                print(k)
-
-        
-        #ex_film_avg = ex_film_avg / self.mc_steps
-        #ex_film_var = (ex_film_var /self.mc_steps) - (np.power(ex_film_avg,2))
-        
-        R_avg = R_avg / self.mc_steps
-        T_avg = T_avg / self.mc_steps
-        R_std = (R_std /self.mc_steps) - (np.power(R_avg,2))
-        T_std = (T_std /self.mc_steps) - (np.power(T_avg,2))
-        
-
-        return   R_avg, T_avg, R_std, T_std, freq
+        return rnd_eps, rnd_sigma    
 
 
 
