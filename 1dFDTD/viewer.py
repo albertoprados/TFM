@@ -7,8 +7,9 @@ from matplotlib import rc
 
 class Animator:
 
-    def animationex(self, exanimation, malla, field):
+    def animationex(self, exanimation, exanimation_mc, malla, field):
         self.exanimation=exanimation
+        self.exanimation_mc=exanimation_mc
         self.malla=malla
         self.field=field
 
@@ -20,9 +21,11 @@ class Animator:
         x = np.linspace(0, malla.ncells, malla.ncells+1)
 
         line = ax.plot(x, exanimation[0, :], color='k', lw=2)[0]                
+        line2 = ax.plot(x, exanimation_mc[0,:], color='r', lw=2)[0] 
 
         def animate(i):
             line.set_ydata(exanimation[i, :])
+            line2.set_ydata(exanimation_mc[i, :])
 
         if field=="std":
             plt.ylabel('$\sigma^2$ (E$_x$)', fontsize='14')
@@ -50,24 +53,34 @@ class Animator:
         plt.draw()
         plt.show()    
    
-    def fftgraph(self, freq, r ,t, std_r,std_t, r_panel,t_panel):
+    def Transmittance_graph(self, freq, t, std_t, t_mc, std_t_mc, t_panel):
         plt.errorbar(freq, t, yerr= std_t)
-        plt.errorbar(freq, r, yerr= std_r)
-       
-        
-        plt.plot(freq,r_panel, label='R Panel')
+        plt.errorbar(freq, t_mc, yerr= std_t_mc)
         plt.plot(freq,t_panel, label='T Panel')
-        
-        #plt.plot(freq,r*r+t*t, label='$R^2+T^2$')
 
-        plt.ylim(-0.2,1.2)
-        #plt.xlim(0, 1.5e11)
+        #plt.ylim(0,1.0)
         
         plt.xlabel('Frequency w')
-        plt.ylabel('R&T')
-        plt.title('Reflected and transmitted E in frequency domain')
+        plt.ylabel('T')
+        plt.title('Transmittance in frequency domain')
 
         plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def Reflectance_graph(self, freq, r, std_r, r_mc, std_r_mc ,r_panel):
+        plt.errorbar(freq, r, yerr= std_r)
+        plt.errorbar(freq, r_mc, yerr= std_r_mc)
+        plt.plot(freq,r_panel, label='R Panel')
+        
+        #plt.ylim(0,1.2)
+        
+        plt.xlabel('Frequency w')
+        plt.ylabel('R')
+        plt.title('Reflectance in frequency domain')
+
+        plt.legend()
+        plt.grid(True)
         plt.show()
 
     def fftgraph_mc(self, freq, r, t, r_panel, t_panel):

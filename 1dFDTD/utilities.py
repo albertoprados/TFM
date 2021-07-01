@@ -31,8 +31,8 @@ class Utilities:
     
     def FFT(self,e1tk1_total,e2tk1,e1tk2,e2tk2,time):
         #Frequency
-        freq_min=0
-        freq_max=6e10
+        freq_min=5e9
+        freq_max=3e10
 
         N=len(e1tk1_total)
         freq= ((2*np.pi)/time) * np.arange(0,N)  
@@ -59,8 +59,8 @@ class Utilities:
     
     def FFT_std(self, stde_k1, stde_k2, e2_k1, e2_k2, time):
         #Frequency
-        freq_min=0
-        freq_max=6e10
+        freq_min=5e9
+        freq_max=3e10
 
         N=len(stde_k1)
         freq= ((2*np.pi)/time) * np.arange(0,N)  

@@ -39,7 +39,26 @@ class Mesh:
        
         return  ca, cb, cc
 
-    def cellsproperties(self,epsilon_r,sigma):
+
+    def Gaussian_Pdf_cell(self):
+
+        rnd_epsilon_r=np.ones(self.ncells+1)       
+        rnd_sigma=np.zeros(self.ncells+1)  
+
+        for j in range(self.par.num_materials):
+            for i in range(self.par.start_m()[j],self.par.end_m()[j]):
+                    rnd_epsilon_r[i]=np.random.normal(self.par.epsilon_r()[j], \
+                        self.s_par.std_eps_r()[j])
+                    rnd_sigma[i]=np.random.normal(self.par.sigma()[j], \
+                        self.s_par.std_sigma()[j])
+        
+
+        return rnd_epsilon_r, rnd_sigma
+
+
+    def cellsproperties(self):
+        epsilon_r, sigma = self.Gaussian_Pdf_cell()
+
         eaf = np.empty(self.ncells+1)
         #Coef. for update E equation
         ca = np.ones(self.ncells+1)
@@ -56,6 +75,7 @@ class Mesh:
        
         return  ca, cb, cc
     
+  
 
     
 
