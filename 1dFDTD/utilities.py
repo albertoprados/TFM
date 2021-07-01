@@ -51,6 +51,7 @@ class Utilities:
         e1wk2=e1wk2[(freq_min <= freq) & (freq < freq_max)]
         e2wk2=e2wk2[(freq_min <= freq) & (freq < freq_max)]
         freq=freq[(freq_min <= freq) & (freq < freq_max)]
+        
 
         R=np.abs(e1wk1) / np.abs(e2wk1)
         T=np.abs(e1wk2) / np.abs(e2wk2)

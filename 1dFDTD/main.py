@@ -2,7 +2,7 @@ from utilities import Source, Utilities, MultiPanel
 from mesh import Mesh, Materials, S_Materials
 from solver import FDTD, MonteCarlo 
 from viewer import Animator
-import numpy as np
+import pickle
 
 
 #Permitivity,Conductivity,Start_Point,End_Point
@@ -102,22 +102,27 @@ r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq+1)
 
 #ex_film_mc
 #var_e_film_mc
-r_mc, t_mc, std_r_mc, std_t_mc, freq_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 10).M_FDTD()
+r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 10).M_FDTD('cell')
 
 #Film
 #Animator().animationex(ex_film_mc,malla1,'ex')
 #Animator().animationex(var_e_film_mc,malla1,'var')
-
 #Resultado Analitico
 #r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq_mc+1)
-
 #Animator().fftgraph(freq_mc, r_mc, t_mc, r_std_mc, t_std_mc, r_panel, t_panel)
-
 #All coeficients
 #Animator().fftgraph_mc(freq_mc,r_mc,t_mc,r_panel,t_panel)
 
 #------------------------------------------
 #------------------------------------------
+
+layer10gauss=[freq, r, t, std_r, std_t, r_panel, t_panel, r_mc, t_mc, std_r_mc, std_t_mc]
+fichero=open("layer10gauss","wb")
+pickle.dump(layer10gauss,fichero)
+fichero.close()
+del(fichero)
+
+
 
 #Visualizacion
 Animator().Reflectance_graph(freq, r, std_r, r_mc, std_r_mc, r_panel)

@@ -1,4 +1,3 @@
-from numpy.lib.function_base import kaiser
 from mesh import Mesh, Materials, S_Materials
 from utilities import Utilities
 import numpy as np
@@ -144,13 +143,13 @@ class MonteCarlo:
         return ex_k1, ex_k2, ex_film    
 
 
-    def M_FDTD(self):
+    def M_FDTD(self,layer_or_cell):
         
         nsteps=FDTD(self.mesh, self.pulse, self.time).nsteps()
         ncells=self.mesh.ncells
 
-        #if layer_or_cell == 'layer':
-            #rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf_layer()
+        if layer_or_cell == 'layer':
+            rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf_layer()
         
         #Definicion de vectores medios
         ex_film_avg=np.zeros((nsteps+1,ncells+1))
@@ -183,16 +182,13 @@ class MonteCarlo:
             ex_k1=np.zeros(nsteps+1)
             ex_k2=np.zeros(nsteps+1)
             ex_film=np.zeros((nsteps+1,ncells+1))
-            
             """
-            R=np.empty(len(freq))
-            T=np.empty(len(freq))
-            #if layer_or_cell == 'layer':
-                #ex_k1, ex_k2, ex_film = self.Layer_Method(k, rnd_epsilon_r, rnd_sigma)
-            #if layer_or_cell == 'cell':
-            ex_k1, ex_k2, ex_film = self.Cell_Method()        
+          
+            if layer_or_cell == 'layer':
+                ex_k1, ex_k2, ex_film = self.Layer_Method(k, rnd_epsilon_r, rnd_sigma)
+            if layer_or_cell == 'cell':
+                ex_k1, ex_k2, ex_film = self.Cell_Method()        
 
-            
 
             #Film
             ex_film_avg += ex_film    
@@ -202,10 +198,8 @@ class MonteCarlo:
             #R[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
             #T[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
 
-            R = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
-            print(R)
-            T = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[1]
-            
+            R, T, _ = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)
+           
             R_sum += R
             T_sum += T
             R_sum2 += np.power(R,2)
@@ -218,11 +212,11 @@ class MonteCarlo:
         R_avg = R_sum / self.mc_steps
         T_avg = T_sum / self.mc_steps
         
-        R_std = np.sqrt((R_sum2 /self.mc_steps) - (np.power(R_avg,2)))
+        R_std = np.sqrt(abs((R_sum2 /self.mc_steps) - (np.power(R_avg,2))))
         T_std = np.sqrt((T_sum2 /self.mc_steps) - (np.power(T_avg,2)))
         
 
-        return R_avg, T_avg, R_std, T_std, freq, ex_film_avg, ex_film_var   
+        return R_avg, T_avg, R_std, T_std, ex_film_avg, ex_film_var   
 
     
 
