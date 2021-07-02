@@ -24,10 +24,11 @@ class FDTD:
 
     def Include_SFDTD_Analysis(self,std_h,std_e,e,h,std_e_old):
         std_e_old=copy.deepcopy(std_e) 
+        
         Stochastic_FDTD(self.mesh).StandardDeviation_E(std_h,std_e,e,h)
         Stochastic_FDTD(self.mesh).BoundaryCondition(std_e,std_e_old)
-
         Stochastic_FDTD(self.mesh).StandardDeviation_H(std_h,std_e)
+        
         
     def nsteps(self):
         return int(self.time / self.mesh.dt())  
@@ -40,22 +41,22 @@ class FDTD:
         ex_old=np.zeros(self.mesh.ncells+1)
 
         #Saving values for film
-        ex_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))
+        ex_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))
 
         #Fourier transform
-        ex_k1=np.empty(self.nsteps()+1)
-        ex_k2=np.empty(self.nsteps()+1)
-        std_e_k1=np.empty(self.nsteps()+1)
-        std_e_k2=np.empty(self.nsteps()+1)
+        ex_k1=np.zeros(self.nsteps()+1)
+        ex_k2=np.zeros(self.nsteps()+1)
+        std_e_k1=np.zeros(self.nsteps()+1)
+        std_e_k2=np.zeros(self.nsteps()+1)
 
         #Standard Deviation
         if Computation_Method == 'SFDTD':
             std_e=np.zeros(self.mesh.ncells+1)
             std_h=np.zeros(self.mesh.ncells)
-            std_e_old=std_e=np.zeros(self.mesh.ncells+1)
+            std_e_old=np.zeros(self.mesh.ncells+1)
             
 
-        std_e_film=np.empty((self.nsteps()+1,self.mesh.ncells+1))    
+        std_e_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))    
 
         if Computation_Method == 'MFDTD':
             ca, cb, cc = self.mesh.cellsproperties()
@@ -64,8 +65,11 @@ class FDTD:
 
         k1, k2 = self.mesh.FFTpoints()
 
-        for time_step in range(self.nsteps()):
+        for time_step in range(self.nsteps()+1):
             ex_old=copy.deepcopy(ex)
+
+            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)  
+
             ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
@@ -74,24 +78,24 @@ class FDTD:
             #Guardo los valores para calcular la transformada
             ex_k1[time_step]=ex[k1]
             ex_k2[time_step]=ex[k2]
-           
-            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)  
-            
+        
+
             self.boundarymur(ex,ex_old)  
-            
+
+            t= time_step + 1/2
+            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
+            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)  
+             
+
             hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])
-               
+            
+            
 
             if Computation_Method == 'SFDTD':
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
                 std_e_k1[time_step]=std_e[k1]
                 std_e_k2[time_step]=std_e[k2]
                 std_e_film[time_step][:]=std_e[:]
-            
-            
-            t= time_step + 1/2
-            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
-            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)   
 
         return ex_k1, ex_k2, std_e_k1, std_e_k2, ex_film, np.power(std_e_film ,2)
 
@@ -192,7 +196,7 @@ class MonteCarlo:
 
             R, T, _ = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)
            
-            R_sum = np.add(R_sum,R)
+            R_sum += R
             T_sum += T
             R_sum2 += np.power(R,2)
             T_sum2 += np.power(T,2)

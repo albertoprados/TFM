@@ -8,10 +8,6 @@ from matplotlib import rc
 class Animator:
 
     def animationex(self, exanimation, exanimation_mc, malla, field):
-        self.exanimation=exanimation
-        self.exanimation_mc=exanimation_mc
-        self.malla=malla
-        self.field=field
 
         cb=malla.materials()[1]
        

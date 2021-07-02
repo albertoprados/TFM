@@ -52,7 +52,7 @@ par_s_void=S_Materials(s_void)
 
 
 #Tiempo de simulacion
-time=2e-8
+time=8.33e-9
 
 
 #Parametros de la malla
@@ -78,7 +78,7 @@ malla_max=Mesh(200,0.001,par_material_max,par_s_material)
 malla_min=Mesh(200,0.001,par_material_min,par_s_material)
 """
 #Parametros del pulso
-pulso=Source('gauss',40,12,2e9,malla1,20)
+pulso=Source('sin',40,12,2e9,malla1,20)
 
 #--------------------------------------------
 #--------------------------------------------
@@ -94,15 +94,14 @@ std_r, std_t= Utilities().FFT_std(stde_k1,stde_k2,ex2_k1,ex2_k2,time)
 #Resultado Analitico
 r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq+1)
 
-
+#Animator().animationex(ex_film,malla1,'ex')
+#Animator().animationex(var_e_film,malla1,'ex')
 #--------------------------------------------
 #--------------------------------------------
 
 #Monte Carlo
 
-#ex_film_mc
-#var_e_film_mc
-r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 10).M_FDTD('cell')
+r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 1000).M_FDTD('layer')
 
 #Film
 #Animator().animationex(ex_film_mc,malla1,'ex')
@@ -115,20 +114,19 @@ r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, p
 
 #------------------------------------------
 #------------------------------------------
-"""
-layer10gauss=[freq, r, t, std_r, std_t, r_panel, t_panel, r_mc, t_mc, std_r_mc, std_t_mc]
-fichero=open("layer10gauss","wb")
-pickle.dump(layer10gauss,fichero)
-fichero.close()
-del(fichero)
-"""
-Animator().Reflectance_simple(freq, r_mc, std_r_mc)
+
+#layer10gauss=[freq, r, t, std_r, std_t, r_panel, t_panel, r_mc, t_mc, std_r_mc, std_t_mc]
+#fichero=open("layer10gauss","wb")
+#pickle.dump(layer10gauss,fichero)
+#fichero.close()
+#del(fichero)
+
+#Animator().Reflectance_simple(freq, r_mc, std_r_mc)
 
 #Visualizacion
-"""
+
 Animator().Reflectance_graph(freq, r, std_r, r_mc, std_r_mc, r_panel)
 Animator().Transmittance_graph(freq, t, std_t, t_mc, std_t_mc, t_panel)
 
 Animator().animationex(ex_film,ex_film_mc,malla1,'ex')
 Animator().animationex(var_e_film,var_e_film_mc,malla1,'std')
-"""
