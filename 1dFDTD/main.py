@@ -101,7 +101,7 @@ r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq+1)
 
 #Monte Carlo
 
-r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 1000).M_FDTD('layer')
+r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 100).M_FDTD('layer')
 
 #Film
 #Animator().animationex(ex_film_mc,malla1,'ex')

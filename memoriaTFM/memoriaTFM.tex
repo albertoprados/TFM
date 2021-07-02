@@ -403,6 +403,22 @@ The coefficients of the Fourier transform can be identified with the $a's$ in \r
 so the standard deviation of the Fourier transform of the fields is the Fourier transform of the standard deviations, which could have also been viewed as the linearity in the Fourier Transform.
 Finally, the standard deviation of the coefficients $R$ and, in an analogous way, $T$, is obtained with \ref{error RyT}.
 
+\chapter{Monte Carlo FDTD.}
+\section{Introduction to the M-FDTD method.}
+\indent Monte Carlo method is the traditional approach to evaluate statistical quantities such as the mean and variance. This method is well known and widely used in several areas of physics. In the case at hand, the Monte Carlo is applied to the usual FDTD algorithm explained before. \\
+\indent The M-FDTD algorithm will be used to compare the results obtained with the S-FDTD. The differences will depend mainly in the choice of the correlation coefficients in the S-FDTD variance equations, therefore the Monte Carlo can be used to check the validity of a particular choice or even to estimate the value of the correlations [S-FDTD accuracy improvement]. \\
+\indent The first step for the M-FDTD is to generate the parameters, namely the permittivity and conductivity, randomly distributed according to a given distribution. The Gaussian distribution have been chosen for the main results although other distributions could be used to produce the electrical parameters, for this purpose the Metropolis algorithm can be employed. Variability could also be introduced in the thickness of the materials but this will not be approached in this work. \\
+\indent Variability can be present in materials for several reasons. Consider some inhomogeneous materials such as biological tissues like skin, fat or muscle. The composition and therefore the electrical properties will vary among people, for example, tissues' conductivities will depend on the level of hydration of the individual.
+Another way in which variability can appear is due to measurement uncertainties. In the next section, two different schemes for computing the Monte Carlo will be explored to treat the two sources of uncertainties explained here. 
+
+\section{Scheme of the Monte Carlo method.}
+
+
+
+
+
+
+
 
 %\chapter{Los enunciados}
 
