@@ -83,6 +83,17 @@ class Animator:
         plt.grid(True)
         plt.show()
 
+    def Reflectance_simple(self, freq, r, std_r):
+        plt.errorbar(freq, r, yerr= std_r)
+        
+        plt.xlabel('Frequency w')
+        plt.ylabel('R')
+        plt.title('Reflectance in frequency domain')
+
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
     def fftgraph_mc(self, freq, r, t, r_panel, t_panel):
         """
         plt.errorbar(freq, r, yerr= r_std)

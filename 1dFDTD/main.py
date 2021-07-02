@@ -36,9 +36,9 @@ par_material=Materials(material)
 par_material_max=Materials(material_max1)
 par_material_min=Materials(material_min1)
 #Std_Permitivity,Std_Conductivity,Corr_Eps_E,Corr_Sigma_E,Corr_Eps_H,Corr_Sigma_H
-s_skin=[3.4,0.10,0.5,0.5,0.5,0.5]
-s_fat=[2.7,0.06,0.5,0.5,0.5,0.5]
-s_muscle=[4.6,0.10,0.5,0.5,0.5,0.5]
+s_skin=[3.4,0.10,1,1,1,1]
+s_fat=[2.7,0.06,1,1,1,1]
+s_muscle=[4.6,0.10,1,1,1,1]
 
 s_materiales=[s_fat,s_skin,s_muscle]
 par_s_materiales=S_Materials(s_materiales)
@@ -52,7 +52,7 @@ par_s_void=S_Materials(s_void)
 
 
 #Tiempo de simulacion
-time=8.33e-9
+time=2e-8
 
 
 #Parametros de la malla
@@ -115,22 +115,20 @@ r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, p
 
 #------------------------------------------
 #------------------------------------------
-
+"""
 layer10gauss=[freq, r, t, std_r, std_t, r_panel, t_panel, r_mc, t_mc, std_r_mc, std_t_mc]
 fichero=open("layer10gauss","wb")
 pickle.dump(layer10gauss,fichero)
 fichero.close()
 del(fichero)
-
-
+"""
+Animator().Reflectance_simple(freq, r_mc, std_r_mc)
 
 #Visualizacion
+"""
 Animator().Reflectance_graph(freq, r, std_r, r_mc, std_r_mc, r_panel)
 Animator().Transmittance_graph(freq, t, std_t, t_mc, std_t_mc, t_panel)
 
 Animator().animationex(ex_film,ex_film_mc,malla1,'ex')
 Animator().animationex(var_e_film,var_e_film_mc,malla1,'std')
-"""
-Animator().animationex(ex_film_mc,malla1,'ex')
-Animator().animationex(var_e_film_mc,malla1,'std')
 """

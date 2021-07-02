@@ -135,14 +135,7 @@ class MonteCarlo:
 
         return ex_k1, ex_k2, ex_film
 
-
-    def Cell_Method(self):
-
-        ex_k1, ex_k2, _, _, ex_film, _ = FDTD(self.mesh, self.pulse, self.time).FDTDLoop('MFDTD')
-
-        return ex_k1, ex_k2, ex_film    
-
-
+  
     def M_FDTD(self,layer_or_cell):
         
         nsteps=FDTD(self.mesh, self.pulse, self.time).nsteps()
@@ -181,13 +174,12 @@ class MonteCarlo:
             """
             ex_k1=np.zeros(nsteps+1)
             ex_k2=np.zeros(nsteps+1)
-            ex_film=np.zeros((nsteps+1,ncells+1))
             """
           
             if layer_or_cell == 'layer':
                 ex_k1, ex_k2, ex_film = self.Layer_Method(k, rnd_epsilon_r, rnd_sigma)
             if layer_or_cell == 'cell':
-                ex_k1, ex_k2, ex_film = self.Cell_Method()        
+                ex_k1, ex_k2, _, _, ex_film, _ = FDTD(self.mesh, self.pulse, self.time).FDTDLoop('MFDTD')      
 
 
             #Film
@@ -200,7 +192,7 @@ class MonteCarlo:
 
             R, T, _ = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)
            
-            R_sum += R
+            R_sum = np.add(R_sum,R)
             T_sum += T
             R_sum2 += np.power(R,2)
             T_sum2 += np.power(T,2)
@@ -212,7 +204,7 @@ class MonteCarlo:
         R_avg = R_sum / self.mc_steps
         T_avg = T_sum / self.mc_steps
         
-        R_std = np.sqrt(abs((R_sum2 /self.mc_steps) - (np.power(R_avg,2))))
+        R_std = np.sqrt((R_sum2 /self.mc_steps) - (np.power(R_avg,2)))
         T_std = np.sqrt((T_sum2 /self.mc_steps) - (np.power(T_avg,2)))
         
 
