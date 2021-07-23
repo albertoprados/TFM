@@ -52,7 +52,7 @@ par_s_void=S_Materials(s_void)
 
 
 #Tiempo de simulacion
-time=8.33e-9
+time=8.6e-9
 
 
 #Parametros de la malla
@@ -78,22 +78,65 @@ malla_max=Mesh(200,0.001,par_material_max,par_s_material)
 malla_min=Mesh(200,0.001,par_material_min,par_s_material)
 """
 #Parametros del pulso
-pulso=Source('sin',40,12,2e9,malla1,20)
+pulse_type='sin'
+pulso=Source(pulse_type,40,12,2e9,malla1,20)
 
 #--------------------------------------------
 #--------------------------------------------
 
 #Ejecucion y visualizacion
 
-ex1_k1, ex1_k2, stde_k1, stde_k2, ex_film, var_e_film = FDTD(malla1,pulso,time).FDTDLoop('SFDTD')
+ex1_k1, ex1_k2, stde_k1, stde_k2, ex, var_ex = FDTD(malla1,pulso,time).FDTDLoop('SFDTD')
 ex2_k1, ex2_k2, _, _, _,_ = FDTD(malla2,pulso,time).FDTDLoop('FDTD')
 
 r, t, freq= Utilities().FFT(ex1_k1,ex2_k1,ex1_k2,ex2_k2,time)
-std_r, std_t= Utilities().FFT_std(stde_k1,stde_k2,ex2_k1,ex2_k2,time)
+std_r_old,std_t_old= Utilities().FFT_std(stde_k1,stde_k2,ex2_k1,ex2_k2,time)
+
+r, t, freq= Utilities().FFT(ex1_k1,ex2_k1,ex1_k2,ex2_k2,time)
+r_max, t_max, freq= Utilities().FFT(ex1_k1+stde_k1,ex2_k1,ex1_k2+stde_k2,ex2_k2,time)
+r_min, t_min, freq= Utilities().FFT(ex1_k1-stde_k1,ex2_k1,ex1_k2-stde_k2,ex2_k2,time)
+std_r, std_t= Utilities().FFT_std2(stde_k1,stde_k2,ex1_k1,ex1_k2,ex2_k1,ex2_k2,time)
 
 #Resultado Analitico
 r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq+1)
 
+#Primera validacion r^2+t^2
+#Animator().Reflectance_simple1(freq, r, t)
+#Segunda validacion clase Panel
+#Animator().Reflectance_simple2(freq, r, t, r_panel, t_panel)
+#Tercera validacion 3 materiales con la clase panel
+#Animator().Reflectance_simple2(freq, r, t, r_panel, t_panel)
+#Cuarta validacion stdR pulso gaussiano y sinusoidal
+Animator().Reflectance_simple3(freq, r, std_r,r_max,r_min)
+"""
+validation05=[ex, var_ex]
+fichero=open("validation05","wb")
+pickle.dump(validation05,fichero)
+fichero.close()
+del(fichero)
+"""
+"""
+validation12=[ex, var_ex]
+fichero=open("validation12","wb")
+pickle.dump(validation12,fichero)
+fichero.close()
+del(fichero)
+"""
+
+"""
+validation10y11=[r, t, std_r, std_t]
+fichero=open("validation10y11","wb")
+pickle.dump(validation10y11,fichero)
+fichero.close()
+del(fichero)
+"""
+
+"""
+Animator().Reflectance_simple(freq, r, std_r, r_panel,r_max,r_min)
+Animator().Reflectance_simple(freq, t, std_t, t_panel,t_max,t_min)
+Animator().Reflectance_simple(freq, r, std_r2, r_panel,r_max,r_min)
+Animator().Reflectance_simple(freq, t, std_t2, t_panel,t_max,t_min)
+"""
 #Animator().animationex(ex_film,malla1,'ex')
 #Animator().animationex(var_e_film,malla1,'ex')
 #--------------------------------------------
@@ -101,7 +144,7 @@ r_panel, t_panel=MultiPanel(materiales, malla1).RyT(freq+1)
 
 #Monte Carlo
 
-r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, pulso, time, 100).M_FDTD('layer')
+#r_mc, t_mc, std_r_mc, std_t_mc, ex_mc, var_ex_mc = MonteCarlo(malla1, pulso, time, 10000).M_FDTD('layer')
 
 #Film
 #Animator().animationex(ex_film_mc,malla1,'ex')
@@ -114,19 +157,29 @@ r_mc, t_mc, std_r_mc, std_t_mc, ex_film_mc, var_e_film_mc = MonteCarlo(malla1, p
 
 #------------------------------------------
 #------------------------------------------
-
-#layer10gauss=[freq, r, t, std_r, std_t, r_panel, t_panel, r_mc, t_mc, std_r_mc, std_t_mc]
-#fichero=open("layer10gauss","wb")
-#pickle.dump(layer10gauss,fichero)
-#fichero.close()
-#del(fichero)
+"""
+layer10000gauss=[freq, r, t, std_r, std_t, r_panel, t_panel, r_mc, t_mc, std_r_mc, std_t_mc,ex,ex_mc,var_ex,var_ex_mc]
+fichero=open("layer10000gauss","wb")
+pickle.dump(layer10000gauss,fichero)
+fichero.close()
+del(fichero)
+"""
 
 #Animator().Reflectance_simple(freq, r_mc, std_r_mc)
+#Animator().animationex(ex_film,ex_film_mc,malla1,'ex')
+#Animator().animationex(var_e_film,var_e_film_mc,malla1,'std')
 
 #Visualizacion
+"""
+Animator().Reflectance_graph(freq, r, std_r2, r_mc, std_r_mc, r_panel, pulse_type)
+Animator().Transmittance_graph(freq, t, std_t2, t_mc, std_t_mc, t_panel,pulse_type)
+Animator().lastsnapshot(ex,ex_mc,malla1,'ex')
 
-Animator().Reflectance_graph(freq, r, std_r, r_mc, std_r_mc, r_panel)
-Animator().Transmittance_graph(freq, t, std_t, t_mc, std_t_mc, t_panel)
+"""
+validacion05=open("validation05","rb")
+var05=pickle.load(validacion05)
 
-Animator().animationex(ex_film,ex_film_mc,malla1,'ex')
-Animator().animationex(var_e_film,var_e_film_mc,malla1,'std')
+validacion12mc=open("layer10000sin","rb")
+mc12=pickle.load(validacion12mc)
+
+Animator().lastsnapshot2(var_ex, var05[1], mc12[14] ,malla1,'std')

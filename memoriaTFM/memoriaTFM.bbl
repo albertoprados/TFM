@@ -1,0 +1,127 @@
+\begin{thebibliography}{10}
+
+\bibitem{smith2011stochastic}
+S.~M. Smith, {\em Stochastic finite-difference time-domain}.
+\newblock The University of Utah, 2011.
+
+\bibitem{smith2012stochastic}
+S.~M. Smith and C.~Furse, ``Stochastic fdtd for analysis of statistical
+  variation in electromagnetic fields,'' {\em IEEE Transactions on Antennas and
+  Propagation}, vol.~60, no.~7, pp.~3343--3350, 2012.
+
+\bibitem{taflove2005computational}
+A.~Taflove, S.~C. Hagness, and M.~Piket-May, ``Computational electromagnetics:
+  the finite-difference time-domain method,'' {\em The Electrical Engineering
+  Handbook}, vol.~3, 2005.
+
+\bibitem{Sadiku2009}
+M.~Sadiku, {\em {Monte Carlo Methods for Electromagnetics}}.
+\newblock 2009.
+
+\bibitem{casella2021statistical}
+G.~Casella and R.~L. Berger, {\em Statistical inference}.
+\newblock Cengage Learning, 2021.
+
+\bibitem{Zygiridis2017}
+T.~T. Zygiridis, ``{A Short Review of FDTD-Based Methods for Uncertainty
+  Quantification in Computational Electromagnetics},'' {\em Mathematical
+  Problems in Engineering}, vol.~2017, 2017.
+
+\bibitem{gandhi1996electromagnetic}
+O.~P. Gandhi, G.~Lazzi, and C.~M. Furse, ``Electromagnetic absorption in the
+  human head and neck for mobile telephones at 835 and 1900 mhz,'' {\em IEEE
+  transactions on microwave theory and techniques}, vol.~44, no.~10,
+  pp.~1884--1897, 1996.
+
+\bibitem{furse1996fdtd}
+C.~M. Furse, G.~Lazzi, and O.~Gandhi, ``Fdtd computation of power deposition in
+  the head for cellular telephones,'' in {\em IEEE Antennas and Propagation
+  Society International Symposium. 1996 Digest}, vol.~3, pp.~1794--1797, IEEE,
+  1996.
+
+\bibitem{Christ2005}
+A.~Christ and N.~Kuster, ``{Differences in RF energy absorption in the heads of
+  adults and children},'' {\em Bioelectromagnetics}, vol.~26, no.~SUPPL. 7,
+  2005.
+
+\bibitem{johnson2001cross}
+D.~Johnson, E.~Cherkaev, C.~Furse, and A.~C. Tripp, ``Cross-borehole
+  delineation of a conductive ore deposit in a resistive host—experimental
+  design,'' {\em Geophysics}, vol.~66, no.~3, pp.~824--835, 2001.
+
+\bibitem{simpson2007review}
+J.~J. Simpson and A.~Taflove, ``A review of progress in fdtd maxwell's
+  equations modeling of impulsive subionospheric propagation below 300 khz,''
+  {\em IEEE Transactions on Antennas and Propagation}, vol.~55, no.~6,
+  pp.~1582--1590, 2007.
+
+\bibitem{yee1966numerical}
+K.~Yee, ``Numerical solution of initial boundary value problems involving
+  maxwell's equations in isotropic media,'' {\em IEEE Transactions on antennas
+  and propagation}, vol.~14, no.~3, pp.~302--307, 1966.
+
+\bibitem{li2017numerical}
+Z.~Li, Z.~Qiao, and T.~Tang, {\em Numerical solution of differential equations:
+  introduction to finite difference and finite element methods}.
+\newblock Cambridge University Press, 2017.
+
+\bibitem{houle2020electromagnetic}
+J.~E. Houle and D.~M. Sullivan, {\em Electromagnetic Simulation Using the FDTD
+  Method with Python}.
+\newblock John Wiley \& Sons, 2020.
+
+\bibitem{mur1981absorbing}
+G.~Mur, ``Absorbing boundary conditions for the finite-difference approximation
+  of the time-domain electromagnetic-field equations,'' {\em IEEE transactions
+  on Electromagnetic Compatibility}, no.~4, pp.~377--382, 1981.
+
+\bibitem{Mansourabadi2008}
+M.~Mansourabadi and A.~Pourkazemi, ``{FDTD hard source and soft source reviews
+  and modifications},'' {\em Progress In Electromagnetics Research C}, vol.~3,
+  no.~January 2008, pp.~143--160, 2008.
+
+\bibitem{orfanidis2002electromagnetic}
+S.~J. Orfanidis, ``Electromagnetic waves and antennas,'' 2002.
+
+\bibitem{frickey1994conversions}
+D.~A. Frickey, ``Conversions between s, z, y, h, abcd, and t parameters which
+  are valid for complex source and load impedances,'' {\em IEEE Transactions on
+  microwave theory and techniques}, vol.~42, no.~2, pp.~205--211, 1994.
+
+\bibitem{Garcia2019}
+S.~G. Garcia, M.~R. Cabello, L.~D. Angulo, A.~R. Bretones, M.~G. Atienza, and
+  E.~Pascual-Gil, ``{Application of stochastic FDTD to holland's thin-wire
+  method},'' {\em IEEE Antennas and Wireless Propagation Letters}, vol.~18,
+  no.~10, pp.~2046--2050, 2019.
+
+\bibitem{taylor1997introduction}
+J.~Taylor, {\em Introduction to error analysis, the study of uncertainties in
+  physical measurements}.
+\newblock 1997.
+
+\bibitem{Hastings1995}
+F.~D. Hastings, J.~B. Schneider, and S.~L. Broschat, ``{Monte-Carlo FDTD
+  technique for rough surface scattering},'' {\em IEEE Transactions on Antennas
+  and Propagation}, vol.~43, no.~11, pp.~1183--1191, 1995.
+
+\bibitem{Ajayi2008}
+A.~Ajayi, P.~Ingrey, P.~Sewell, and C.~Christopoulos, ``{Direct computation of
+  statistical variations in electromagnetic problems},'' {\em IEEE Transactions
+  on Electromagnetic Compatibility}, vol.~50, no.~2, pp.~325--332, 2008.
+
+\bibitem{Bisheh2015}
+K.~M. Bisheh, B.~Z. Gatabi, and S.~M.~H. Andargoli, ``{Stochastic FDTD accuracy
+  improvement through correlation coefficient estimation},'' {\em Waves in
+  Random and Complex Media}, vol.~25, no.~2, pp.~154--169, 2015.
+
+\bibitem{inan2011numerical}
+U.~S. Inan and R.~A. Marshall, {\em {Numerical electromagnetics: the FDTD
+  method}}.
+\newblock Cambridge University Press, 2011.
+
+\bibitem{zygiridis2017short}
+T.~T. Zygiridis, ``A short review of fdtd-based methods for uncertainty
+  quantification in computational electromagnetics,'' {\em Mathematical
+  Problems in Engineering}, vol.~2017, 2017.
+
+\end{thebibliography}

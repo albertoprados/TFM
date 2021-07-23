@@ -41,7 +41,7 @@ class FDTD:
         ex_old=np.zeros(self.mesh.ncells+1)
 
         #Saving values for film
-        ex_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))
+        #ex_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))
 
         #Fourier transform
         ex_k1=np.zeros(self.nsteps()+1)
@@ -50,13 +50,13 @@ class FDTD:
         std_e_k2=np.zeros(self.nsteps()+1)
 
         #Standard Deviation
+        std_e=np.zeros(self.mesh.ncells+1)
         if Computation_Method == 'SFDTD':
-            std_e=np.zeros(self.mesh.ncells+1)
             std_h=np.zeros(self.mesh.ncells)
             std_e_old=np.zeros(self.mesh.ncells+1)
             
 
-        std_e_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))    
+        #std_e_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))    
 
         if Computation_Method == 'MFDTD':
             ca, cb, cc = self.mesh.cellsproperties()
@@ -73,7 +73,7 @@ class FDTD:
             ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
             #Guardo los valores a representar
-            ex_film[time_step][:]=ex[:]
+            #ex_film[time_step][:]=ex[:]
             
             #Guardo los valores para calcular la transformada
             ex_k1[time_step]=ex[k1]
@@ -95,9 +95,9 @@ class FDTD:
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
                 std_e_k1[time_step]=std_e[k1]
                 std_e_k2[time_step]=std_e[k2]
-                std_e_film[time_step][:]=std_e[:]
+                #std_e_film[time_step][:]=std_e[:]
 
-        return ex_k1, ex_k2, std_e_k1, std_e_k2, ex_film, np.power(std_e_film ,2)
+        return ex_k1, ex_k2, std_e_k1, std_e_k2, ex, np.power(std_e ,2) #ex_film, np.power(std_e_film ,2)
 
 
    
@@ -135,9 +135,9 @@ class MonteCarlo:
             self.materiales[i][1]=rnd_sigma[i][k]
 
         malla=Mesh(ncells,self.mesh.ddx,Materials(self.materiales),self.s_par)
-        ex_k1, ex_k2, _, _, ex_film, _= FDTD(malla, self.pulse, self.time).FDTDLoop('FDTD')
+        ex_k1, ex_k2, _, _, ex, _= FDTD(malla, self.pulse, self.time).FDTDLoop('FDTD')
 
-        return ex_k1, ex_k2, ex_film
+        return ex_k1, ex_k2, ex
 
   
     def M_FDTD(self,layer_or_cell):
@@ -149,8 +149,12 @@ class MonteCarlo:
             rnd_epsilon_r, rnd_sigma=self.Gaussian_Pdf_layer()
         
         #Definicion de vectores medios
-        ex_film_avg=np.zeros((nsteps+1,ncells+1))
-        ex_film_var=np.zeros((nsteps+1,ncells+1))
+        #ex_film_avg=np.zeros((nsteps+1,ncells+1))
+        #ex_film_var=np.zeros((nsteps+1,ncells+1))
+
+        #E_x last time step average
+        ex_avg=np.zeros(ncells+1)
+        ex_var=np.zeros(ncells+1)
 
         #E auxiliar FFT
         void=[[1,0, self.mesh.par.start_m()[0], self.mesh.par.end_m()[-1]]]
@@ -181,14 +185,14 @@ class MonteCarlo:
             """
           
             if layer_or_cell == 'layer':
-                ex_k1, ex_k2, ex_film = self.Layer_Method(k, rnd_epsilon_r, rnd_sigma)
+                ex_k1, ex_k2, ex = self.Layer_Method(k, rnd_epsilon_r, rnd_sigma)
             if layer_or_cell == 'cell':
-                ex_k1, ex_k2, _, _, ex_film, _ = FDTD(self.mesh, self.pulse, self.time).FDTDLoop('MFDTD')      
+                ex_k1, ex_k2, _, _, ex, _ = FDTD(self.mesh, self.pulse, self.time).FDTDLoop('MFDTD')      
 
 
             #Film
-            ex_film_avg += ex_film    
-            ex_film_var += np.power(ex_film,2)
+            ex_avg += ex  
+            ex_var += np.power(ex,2)
 
             #RyT all coeficients
             #R[:,k] = Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[0]
@@ -201,18 +205,22 @@ class MonteCarlo:
             R_sum2 += np.power(R,2)
             T_sum2 += np.power(T,2)
 
-        
-        ex_film_avg = ex_film_avg / self.mc_steps
-        ex_film_var = (ex_film_var /self.mc_steps) - (np.power(ex_film_avg,2))
+            if k%1000==0:
+                print(k)
+
+        coef_std= self.mc_steps/(self.mc_steps-1)
+
+        ex_avg = ex_avg / self.mc_steps
+        ex_var = (ex_var /(self.mc_steps-1)) - coef_std * (np.power(ex_avg,2))
         
         R_avg = R_sum / self.mc_steps
         T_avg = T_sum / self.mc_steps
         
-        R_std = np.sqrt((R_sum2 /self.mc_steps) - (np.power(R_avg,2)))
-        T_std = np.sqrt((T_sum2 /self.mc_steps) - (np.power(T_avg,2)))
+        R_std = np.sqrt((R_sum2 /(self.mc_steps-1)) - coef_std * (np.power(R_avg,2)))
+        T_std = np.sqrt((T_sum2 /(self.mc_steps-1)) - coef_std * (np.power(T_avg,2)))
         
 
-        return R_avg, T_avg, R_std, T_std, ex_film_avg, ex_film_var   
+        return R_avg, T_avg, R_std, T_std, ex_avg, ex_var   
 
     
 

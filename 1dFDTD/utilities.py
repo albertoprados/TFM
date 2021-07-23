@@ -57,10 +57,10 @@ class Utilities:
         T=np.abs(e1wk2) / np.abs(e2wk2)
         
         return  R, T, freq
-    
+
     def FFT_std(self, stde_k1, stde_k2, e2_k1, e2_k2, time):
         #Frequency
-        freq_min=5e9
+        freq_min=2e9
         freq_max=3e10
 
         N=len(stde_k1)
@@ -80,6 +80,51 @@ class Utilities:
 
         Std_R= np.abs(stdew_k1) / np.abs(e2w_k1)
         Std_T= np.abs(stdew_k2) / np.abs(e2w_k2)   
+
+        return Std_R, Std_T
+
+    def FFT_std2(self, stde_k1, stde_k2, e1tk1_total, e1_k2, e2_k1, e2_k2, time):
+        #Frequency
+        freq_min=5e9
+        freq_max=3e10
+
+        N=len(stde_k1)
+        freq= ((2*np.pi)/time) * np.arange(0,N)  
+
+        e1tk1_reflected = e1tk1_total - e2_k1  
+        e1w_k1=np.fft.fft(e1tk1_reflected)
+        e1w_k2=np.fft.fft(e1_k2)
+
+        stdew_k1=np.fft.fft(stde_k1)
+        stdew_k2=np.fft.fft(stde_k2)
+        
+        #Tomo partes real e imaginaria
+        ReE1w_k1=np.real(e1w_k1)
+        ReE1w_k2=np.real(e1w_k2)
+        ReStdew_k1=np.real(stdew_k1)
+        ReStdew_k2=np.real(stdew_k2)
+        ImE1w_k1=np.imag(e1w_k1)
+        ImE1w_k2=np.imag(e1w_k2)
+        ImStdew_k1=np.imag(stdew_k1)
+        ImStdew_k2=np.imag(stdew_k2)
+        #Modulo de Ew
+        ModE1w_k1=np.abs(e1w_k1)
+        ModE1w_k2=np.abs(e1w_k2)
+
+        Std_ModE1w_k1= ((ReE1w_k1*ReStdew_k1)/ModE1w_k1)+((ImE1w_k1*ImStdew_k1)/ModE1w_k1)
+        Std_ModE1w_k2= ((ReE1w_k2*ReStdew_k2)/ModE1w_k2)+((ImE1w_k2*ImStdew_k2)/ModE1w_k2)
+
+        e2w_k1=np.fft.fft(e2_k1)
+        e2w_k2=np.fft.fft(e2_k2)
+
+        Std_ModE1w_k1=Std_ModE1w_k1[(freq_min <= freq) & (freq < freq_max)]
+        Std_ModE1w_k2=Std_ModE1w_k2[(freq_min <= freq) & (freq < freq_max)]
+        e2w_k1=e2w_k1[(freq_min <= freq) & (freq < freq_max)]
+        e2w_k2=e2w_k2[(freq_min <= freq) & (freq < freq_max)]
+        freq=freq[(freq_min <= freq) & (freq < freq_max)]
+
+        Std_R= Std_ModE1w_k1 / np.abs(e2w_k1)
+        Std_T= Std_ModE1w_k2 / np.abs(e2w_k2)   
 
         return Std_R, Std_T 
 
