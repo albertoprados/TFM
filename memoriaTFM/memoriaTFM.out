@@ -1,0 +1,30 @@
+\BOOKMARK [0][-]{chapter*.2}{English Abstract}{}% 1
+\BOOKMARK [0][-]{chapter*.3}{Resumen en Espa\361ol}{}% 2
+\BOOKMARK [0][-]{chapter.1}{Introduction}{}% 3
+\BOOKMARK [1][-]{section.1.1}{Objectives.}{chapter.1}% 4
+\BOOKMARK [0][-]{chapter.2}{Maxwell's equations and the Yee algorithm.}{}% 5
+\BOOKMARK [1][-]{section.2.1}{Introduction to the finite differences.}{chapter.2}% 6
+\BOOKMARK [1][-]{section.2.2}{One dimensional Maxwell's equations.}{chapter.2}% 7
+\BOOKMARK [2][-]{subsection.2.2.1}{Absorbing boundary conditions.}{section.2.2}% 8
+\BOOKMARK [2][-]{subsection.2.2.2}{Stability and cell size in the FDTD method.}{section.2.2}% 9
+\BOOKMARK [2][-]{subsection.2.2.3}{Sources.}{section.2.2}% 10
+\BOOKMARK [1][-]{section.2.3}{Propagation in a lossy dielectric medium.}{chapter.2}% 11
+\BOOKMARK [0][-]{chapter.3}{Reflectance and Transmittance.}{}% 12
+\BOOKMARK [1][-]{section.3.1}{Introduction to the coefficients.}{chapter.3}% 13
+\BOOKMARK [1][-]{section.3.2}{Analytical result.}{chapter.3}% 14
+\BOOKMARK [1][-]{section.3.3}{Reflectance and transmittance from the FDTD scheme.}{chapter.3}% 15
+\BOOKMARK [0][-]{chapter.4}{Stochastic FDTD.}{}% 16
+\BOOKMARK [1][-]{section.4.1}{Introduction to the S-FDTD method.}{chapter.4}% 17
+\BOOKMARK [1][-]{section.4.2}{Mean Field Values}{chapter.4}% 18
+\BOOKMARK [1][-]{section.4.3}{Variance of H fields}{chapter.4}% 19
+\BOOKMARK [1][-]{section.4.4}{Variance of E fields}{chapter.4}% 20
+\BOOKMARK [1][-]{section.4.5}{Standard Deviation in Reflectance and Transmittance.}{chapter.4}% 21
+\BOOKMARK [0][-]{chapter.5}{Monte Carlo FDTD.}{}% 22
+\BOOKMARK [1][-]{section.5.1}{Introduction to the M-FDTD method.}{chapter.5}% 23
+\BOOKMARK [1][-]{section.5.2}{Scheme of the Monte Carlo method.}{chapter.5}% 24
+\BOOKMARK [1][-]{section.5.3}{Understanding randomness in electrical parameters.}{chapter.5}% 25
+\BOOKMARK [0][-]{chapter.6}{Results.}{}% 26
+\BOOKMARK [1][-]{section.6.1}{Validation of the FDTD method.}{chapter.6}% 27
+\BOOKMARK [1][-]{section.6.2}{Validation of the S-FDTD formalism.}{chapter.6}% 28
+\BOOKMARK [1][-]{section.6.3}{Snapshots of the average fields and the variance}{chapter.6}% 29
+\BOOKMARK [0][-]{chapter.7}{Conclusions.}{}% 30
