@@ -180,12 +180,14 @@ class MonteCarlo:
 
         ex_avg=np.zeros(self.nsteps()+1)
         ex_var=np.zeros(self.nsteps()+1)
+        ex_fixed_time_cell = np.zeros(self.mc_steps)
 
         if layer_or_cell == "layer":
             for k in range(self.mc_steps):
                 ex = self.Layer_Method(k, distribution)[0]
                 ex_avg += ex  
                 ex_var += np.power(ex,2)
+                ex_fixed_time_cell[k] = ex[1000]
 
                 if k%100==0:
                     print(k)
@@ -196,6 +198,7 @@ class MonteCarlo:
                             self.time).FDTDLoop('MFDTD', distribution)[0]
                 ex_avg += ex  
                 ex_var += np.power(ex,2)
+                ex_fixed_time_cell[k] = ex[1000]
 
                 if k%100==0:
                     print(k)
@@ -210,7 +213,7 @@ class MonteCarlo:
         except RuntimeWarning:
             print("Negative value")
         
-        return ex_avg, ex_var, std_ex
+        return ex_avg, ex_var, std_ex, ex_fixed_time_cell
 
 
     def M_FDTD(self,layer_or_cell):

@@ -1,7 +1,7 @@
 from utilities import Source, Utilities, MultiPanel
 from mesh import Mesh, Materials, S_Materials
 from solver import FDTD, MonteCarlo 
-from viewer import Animator, two_subplots
+from viewer import Animator, two_subplots, distribution_plot
 import matplotlib.pyplot as plt
 import pickle
 import pandas as pd
@@ -80,9 +80,9 @@ Animator().animationex(var_e_film,malla1,'std')   """
 mc_steps = 10000
 ex_fdtd, _, std_ex_sfdtd= FDTD(malla1, pulso, time).FDTDLoop('SFDTD')[0:3]
 mc_simulation = MonteCarlo(malla1, pulso, time, mc_steps)
-ex_mc_mean_gauss, ex_var_mc_gauss, _ = mc_simulation.MC_FDTD_Efield("layer", "gaussian")
-ex_mc_mean_uniform, ex_var_mc_uniform, _ = mc_simulation.MC_FDTD_Efield("layer", "uniform")
-ex_mc_mean_gumbel, ex_var_mc_gumbel, _ = mc_simulation.MC_FDTD_Efield("layer", "gumbel")
+ex_mc_mean_gauss, ex_var_mc_gauss, _, ex_fixed_tc_gauss = mc_simulation.MC_FDTD_Efield("layer", "gaussian")
+ex_mc_mean_uniform, ex_var_mc_uniform, _, ex_fixed_tc_uniform = mc_simulation.MC_FDTD_Efield("layer", "uniform")
+ex_mc_mean_gumbel, ex_var_mc_gumbel, _, ex_fixed_tc_gumbel = mc_simulation.MC_FDTD_Efield("layer", "gumbel")
 time_array = np.linspace(0, time, mc_simulation.nsteps()+1)   
  
 df = pd.DataFrame({"time": time_array, "E_FDTD": ex_fdtd, "Mean_E_Gauss": ex_mc_mean_gauss,
@@ -95,11 +95,17 @@ save_path = r'C:\Users\alber\workspace\Stochastic_FDTD\2023_Stoc_papers\2023_non
 file_name = "\{}mc.csv".format(mc_steps)
 df.to_csv(save_path+file_name, index=False)
 
+distribution_plot("Electric field for a given cell and instant", "E value", "Pdf",
+                  [ex_fixed_tc_gauss, ex_fixed_tc_uniform, ex_fixed_tc_gumbel], 
+                  ["MC Gaussian", "MC Uniform", "MC Gumbel"], 
+                  "save", save_path, r"\{}mc_histogram".format(mc_steps))
+""" 
 two_subplots("Random Parameters", "Time (ns)", ["Mean E field", "Var E field"],
              time_array, [ex_fdtd, ex_mc_mean_gauss, ex_mc_mean_uniform, ex_mc_mean_gumbel],
              [np.square(std_ex_sfdtd), ex_var_mc_gauss, ex_var_mc_uniform, ex_var_mc_gumbel],
             ["S-FDTD", "MC Gaussian", "MC Uniform", "MC Gumbel"],
-            "save", save_path, r"\{}mc".format(mc_steps))
+            "save", save_path, r"\{}mc".format(mc_steps))  """
+
 
 #------------------------------------------
 #------------------------------------------

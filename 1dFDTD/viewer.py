@@ -186,21 +186,21 @@ def two_subplots(title, xlabel, ylabel, time_array: list, mean_ex: list,
         figure.tight_layout(pad=0.7)
         figure.savefig(output_path + file_name)
 
-""" def gumbel(mu, sigma):
-    beta = sigma * np.sqrt(6) / np.pi
-    alpha = mu - 0.5772 * beta
-    x = np.linspace(gumbel_r.ppf(0.0000001, loc=alpha, scale=beta), gumbel_r.ppf(0.99, loc=alpha, scale=beta), 100)
-    plt.plot(x, gumbel_r.pdf(x, loc=alpha, scale=beta), 'r-', lw=5, alpha=0.6, label='Gumbel pdf')
-    plt.title(f"Gumbel Distribution with mean={mu} and std={sigma}")
-    plt.legend(loc='best', frameon=False)
-    plt.show()
+def distribution_plot(title, xlabel, ylabel, ex_fixed_time_cell: list,
+                      labels: list, 
+                      show_or_save: str = "save", output_path: str = "",
+                      file_name: str = ""):
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    
+    for i in range(len(ex_fixed_time_cell)):
+        plt.hist(ex_fixed_time_cell[i], bins = 200, density = True, label = labels[i])
+        plt.legend()
 
-def plot_gaussian(mean, std):
-    x = np.linspace(norm.ppf(0.000000000001, loc=mean, scale=std), norm.ppf(0.99, loc=mean, scale=std), 10000)
-    plt.plot(x, norm.pdf(x, loc=mean, scale=std), 'r-', lw=5, alpha=0.6, label='Gaussian pdf')
-    plt.title(f"Gaussian Distribution with mean={mean} and std={std}")
-    plt.legend(loc='best', frameon=False)
-    plt.show()
-
-plot_gaussian(0.214, 0.06)
-gumbel(0.43, 0.1)  """
+    plt.tight_layout(pad=0.7)
+    
+    if show_or_save == "show":
+        plt.show()
+    else:
+        plt.savefig(output_path + file_name)
