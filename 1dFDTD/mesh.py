@@ -11,12 +11,12 @@ class Mesh:
         self.s_par=s_par
         
     def dt(self):
-        return self.ddx/(2*sp.c)    
+        return 0.9 * self.ddx/(sp.c)    
     
     def FFTpoints(self):
         #250,700
         #110,140
-        return self.par.start_m()[0] - 30, self.par.end_m()[-1] + 30
+        return self.par.start_m()[0] -30, self.par.end_m()[-1] + 30
 
 
     def materials(self):
@@ -40,8 +40,29 @@ class Mesh:
         return  ca, cb, cc
 
 
-    def Gaussian_Pdf_cell(self):
+    def uniform_limits(self, mu, sigma):
+        a = mu - np.sqrt(3) * sigma
+        b = mu + np.sqrt(3) * sigma
+        return a, b
+    
 
+    def Uniform_Pdf_cell(self):
+        rnd_epsilon_r=np.ones(self.ncells+1)       
+        rnd_sigma=np.zeros(self.ncells+1)  
+
+        for j in range(self.par.num_materials):
+            a_eps, b_eps = self.uniform_limits(self.par.epsilon_r()[j], \
+                                               self.s_par.std_eps_r()[j])
+            a_sigma, b_sigma = self.uniform_limits(self.par.sigma()[j], \
+                                                   self.s_par.std_sigma()[j])
+            for i in range(self.par.start_m()[j],self.par.end_m()[j]):
+                rnd_epsilon_r[i] = np.random.uniform(a_eps, b_eps)
+                rnd_sigma[i] = np.random.normal(a_sigma, b_sigma)
+
+        return rnd_epsilon_r, rnd_sigma
+
+
+    def Gaussian_Pdf_cell(self):
         rnd_epsilon_r=np.ones(self.ncells+1)       
         rnd_sigma=np.zeros(self.ncells+1)  
 
@@ -56,8 +77,11 @@ class Mesh:
         return rnd_epsilon_r, rnd_sigma
 
 
-    def cellsproperties(self):
-        epsilon_r, sigma = self.Gaussian_Pdf_cell()
+    def cellsproperties(self, distribution: str):
+        if distribution == "gaussian":
+            epsilon_r, sigma = self.Gaussian_Pdf_cell()
+        elif distribution == "uniform":
+            epsilon_r, sigma = self.Uniform_Pdf_cell()
 
         eaf = np.empty(self.ncells+1)
         #Coef. for update E equation
@@ -78,8 +102,6 @@ class Mesh:
   
 
     
-
-
 class Materials:
     def __init__(self, materiales):
         self.materiales=materiales

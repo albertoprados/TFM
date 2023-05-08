@@ -18,7 +18,7 @@ class Source:
         self.time=time
         
         if self.sourcetype == 'gauss':
-            pulse = math.exp(-0.5*( (self.delay - time) / self.spread )**2)
+            pulse = np.exp(-(time - self.delay)**2 / (2 * self.spread**2))
         
         if self.sourcetype == 'sin':
             pulse = math.sin(2.0*np.pi*self.freq*self.malla.dt()*time)
@@ -129,6 +129,7 @@ class Utilities:
         return Std_R, Std_T 
 
 
+
 class MultiPanel: 
     def __init__(self, materials, mesh):
         self.materials = materials
@@ -160,7 +161,6 @@ class MultiPanel:
         return  np.abs(R), np.abs(T)
 
     
-
 
 class Panel: 
     def __init__(self, material, mesh, mu_r = 1.0):

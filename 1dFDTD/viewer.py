@@ -3,11 +3,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
+from matplotlib.ticker import (LinearLocator, FormatStrFormatter,
+MultipleLocator, AutoMinorLocator)
 from matplotlib import rc
+from scipy.stats import gumbel_r, norm
 
 class Animator:
 
-    def animationex(self, exanimation, exanimation_mc, malla, field):
+    def animationex(self, exanimation, malla, field):
 
         cb=malla.materials()[1]
        
@@ -17,22 +20,24 @@ class Animator:
         x = np.linspace(0, malla.ncells, malla.ncells+1)
 
         line = ax.plot(x, exanimation[0, :], color='k', lw=2)[0]                
-        line2 = ax.plot(x, exanimation_mc[0,:], color='r', lw=2)[0] 
+        #line2 = ax.plot(x, exanimation_mc[0,:], color='r', lw=2)[0] 
 
         def animate(i):
             line.set_ydata(exanimation[i, :])
-            line2.set_ydata(exanimation_mc[i, :])
+            #line2.set_ydata(exanimation_mc[i, :])
 
         if field=="std":
-            plt.ylabel('$\sigma^2$ (E$_x$)', fontsize='14')
+            plt.ylabel(r'$\sigma^2$ (E$_x$)', fontsize='14')
 
         if field=="ex":
-            plt.ylabel('E$_x$', fontsize='14')
+            plt.ylabel(r'E$_x$', fontsize='14')
 
-        plt.plot((0.5 / cb - 1) / 3, 'k--',
+        plt.plot((0.99 / cb - 1) / 3, 'k--',
                  linewidth=0.75) # The math on cb is just for scaling
-        plt.axvline(x=malla.par.start_m()[1])
-       
+        plt.axvline(x=malla.par.start_m()[1], ymin=0.5, linestyle = '--', 
+                                            color = "k", linewidth = 0.75)
+        plt.axvline(x=malla.par.start_m()[2], ymin=0.5, linestyle = '--', 
+                                            color = "k", linewidth = 0.75)
 
         for i in range(malla.par.num_materials):
             plt.text(170 , 0.25 + 0.2 * i, 'Eps = {}'.format(malla.par.epsilon_r()[i]),
@@ -59,7 +64,7 @@ class Animator:
         x = np.linspace(0, malla.ncells, malla.ncells+1)
 
         if field=="std":
-            plt.ylabel('$\sigma^2${E$_x$} $(V^2/m^2)$', fontsize='14')
+            plt.ylabel(r'$\sigma^2${E$_x$} $(V^2/m^2)$', fontsize='14')
             plt.ylim(0,0.03)
             plt.text(malla.par.start_m()[0] + 54 , 0.025 , 'Fat',
                     horizontalalignment='center')
@@ -73,7 +78,7 @@ class Animator:
        
 
         if field=="ex":
-            plt.ylabel('E$_x$ (V/m)', fontsize='14')
+            plt.ylabel(r'E$_x$ (V/m)', fontsize='14')
             plt.text(malla.par.start_m()[0] + 54 , 0.75 , 'Fat',
                     horizontalalignment='center')
             plt.text(malla.par.start_m()[1] + 54 , 0.75 , 'Skin',
@@ -110,7 +115,7 @@ class Animator:
         x = np.linspace(0, malla.ncells, malla.ncells+1)
 
         if field=="std":
-            plt.ylabel('$\sigma^2${E$_x$} $(V^2/m^2)$', fontsize='14')
+            plt.ylabel(r'$\sigma^2${E$_x$} $(V^2/m^2)$', fontsize='14')
             plt.ylim(0,0.03)
             plt.text(malla.par.start_m()[0] + 54 , 0.025 , 'Fat',
                     horizontalalignment='center')
@@ -121,7 +126,7 @@ class Animator:
             plt.plot(x, ex, label='S-FDTD',color='limegreen', marker='.', lw='0.5',markersize=2)
 
         if field=="ex":
-            plt.ylabel('E$_x$ (V/m)', fontsize='14')
+            plt.ylabel(r'E$_x$ (V/m)', fontsize='14')
             plt.text(malla.par.start_m()[0] + 54 , 0.75 , 'Fat',
                     horizontalalignment='center')
             plt.text(malla.par.start_m()[1] + 54 , 0.75 , 'Skin',
@@ -149,91 +154,53 @@ class Animator:
         plt.draw()
         plt.show()    
 
-    def Transmittance_graph(self, freq, t, std_t, t_mc, std_t_mc):
-        plt.errorbar(freq, t, yerr= std_t, label='$|T|$ (S-FDTD)', color='darkviolet', capsize=5)
-        plt.errorbar(freq, t_mc, yerr= std_t_mc, label='$|T|$ (Monte Carlo (cell))', color='green', capsize=5)
+def two_subplots(title, xlabel, ylabel, time_array: list, mean_ex: list,
+                  var_ex: list, labels: list, 
+                  show_or_save: str = "save", output_path: str = "",
+                  file_name: str = ""):
 
-        #plt.ylim(0,1.2)
-        
-        plt.xlabel('$\omega$ (Hz)')
-        #plt.ylabel('R')
-        #plt.title('Reflectance in frequency domain')
+    figure, axs = plt.subplots(2, sharex= True, figsize = (9, 8))
+    figure.suptitle(title, fontsize = 18)
+    
+    for i in range(2):
+        axs[i].set_ylabel(ylabel[i], fontsize = 15)
+        axs[i].xaxis.set_minor_locator(AutoMinorLocator(2))
+        axs[i].tick_params(axis='both', which='major', labelsize=10)
+        axs[i].xaxis.offsetText.set_fontsize(10)
+        axs[i].grid(which='both')
+        if i == 1:
+            axs[i].set_xlabel(xlabel, fontsize = 15)
+    
+    for i in range(len(mean_ex)):
+        axs[0].plot(time_array * 1e9, mean_ex[i], 
+            label = labels[i])
+        axs[0].legend(fontsize = 8) 
+        axs[1].plot(time_array * 1e9, var_ex[i], 
+            label = labels[i])
+        axs[1].legend(fontsize = 8) 
 
-        plt.legend()
-        plt.grid(True)
+    if show_or_save == "show":
+        plt.tight_layout(pad=0.7)
         plt.show()
+    else:
+        figure.tight_layout(pad=0.7)
+        figure.savefig(output_path + file_name)
 
-    def Reflectance_graph(self, freq, r, std_r, r_mc, std_r_mc):
-        plt.errorbar(freq, r, yerr= std_r, label='$|R|$ (S-FDTD)', color='orangered', capsize=5)
-        plt.errorbar(freq, r_mc, yerr= std_r_mc, label='$|R|$ (Monte Carlo (cell))', color='blue', capsize=5)
+""" def gumbel(mu, sigma):
+    beta = sigma * np.sqrt(6) / np.pi
+    alpha = mu - 0.5772 * beta
+    x = np.linspace(gumbel_r.ppf(0.0000001, loc=alpha, scale=beta), gumbel_r.ppf(0.99, loc=alpha, scale=beta), 100)
+    plt.plot(x, gumbel_r.pdf(x, loc=alpha, scale=beta), 'r-', lw=5, alpha=0.6, label='Gumbel pdf')
+    plt.title(f"Gumbel Distribution with mean={mu} and std={sigma}")
+    plt.legend(loc='best', frameon=False)
+    plt.show()
 
-        #plt.ylim(0,1.2)
-        
-        plt.xlabel('$\omega$ (Hz)')
-        #plt.ylabel('R')
-        #plt.title('Reflectance in frequency domain')
+def plot_gaussian(mean, std):
+    x = np.linspace(norm.ppf(0.000000000001, loc=mean, scale=std), norm.ppf(0.99, loc=mean, scale=std), 10000)
+    plt.plot(x, norm.pdf(x, loc=mean, scale=std), 'r-', lw=5, alpha=0.6, label='Gaussian pdf')
+    plt.title(f"Gaussian Distribution with mean={mean} and std={std}")
+    plt.legend(loc='best', frameon=False)
+    plt.show()
 
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
-    def Reflectance_simple(self, freq, r, std_r, r_panel,r_max,r_min):
-        plt.errorbar(freq, r, yerr= std_r)
-        plt.plot(freq,r_max, label='rmax')
-        plt.plot(freq,r_min, label='rmin')
-        plt.plot(freq,r_panel, label='rpanel')
-        
-        
-        plt.xlabel('Frequency w')
-        plt.ylabel('R')
-        plt.title('Reflectance in frequency domain')
-
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
-    def Reflectance_simple1(self, freq, r, t):
-        plt.plot(freq,r, label='$|R|$', color='orangered',marker='.', lw='0.5',markersize=2)
-        plt.plot(freq,t, label='$|T|$', color='slateblue',marker='.', lw='0.5',markersize=2)
-        plt.plot(freq,r**2+t**2, label='$|R|^2+|T|^2$',color='black',marker='.', lw='0.5',markersize=2)
-        
-        
-        plt.xlabel('$\omega$ (Hz)')
-        #plt.ylabel('R')
-        #plt.title('Reflectance in frequency domain')
-
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
-    def Reflectance_simple2(self, freq, r, t, rpanel, tpanel):
-        plt.plot(freq,r, label='$|R|$', color='orangered',marker='.', lw='1',markersize=5)
-        plt.plot(freq,t, label='$|T|$', color='slateblue',marker='.', lw='1',markersize=5)
-        plt.plot(freq,rpanel, label='$Analytic |R|$', color='mediumblue',marker='.', lw='1',markersize=2)
-        plt.plot(freq,tpanel, label='$Analytic |T|$', color='darkorange',marker='.', lw='1',markersize=2)
-        #plt.plot(freq,r**2+t**2, label='$|R|^2+|T|^2$',color='black',marker='.', lw='1',markersize=2)
-        
-        
-        plt.xlabel('$\omega$ (Hz)')
-        #plt.ylabel('R')
-        #plt.title('Reflectance in frequency domain')
-
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
-    def Reflectance_simple3(self, freq, r, std_r,r_max,r_min):
-        plt.errorbar(freq, r, yerr= std_r, label='$|R|$', color='orangered', capsize=5)
-        plt.plot(freq,r_max, label='$|R_{min}|$', color='blue',marker='.', lw='0.75',markersize=2)
-        plt.plot(freq,r_min, label='$|R_{max}|$', color='black',marker='.', lw='0.75',markersize=2)
-        
-        
-        
-        plt.xlabel('$\omega$ (Hz)')
-        #plt.ylabel('R')
-        #plt.title('Reflectance in frequency domain')
-
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
+plot_gaussian(0.214, 0.06)
+gumbel(0.43, 0.1)  """

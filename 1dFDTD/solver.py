@@ -3,7 +3,11 @@ from utilities import Utilities
 import numpy as np
 import copy
 import math
+import sys
+import cmath
 import scipy.constants as sp
+import warnings
+warnings.filterwarnings("error")
 
 
 class FDTD:
@@ -34,14 +38,14 @@ class FDTD:
         return int(self.time / self.mesh.dt())  
 
 
-    def FDTDLoop(self, Computation_Method):
+    def FDTDLoop(self, Computation_Method, distribution: str = ""):
         
         ex=np.zeros(self.mesh.ncells+1)
         hy=np.zeros(self.mesh.ncells)
         ex_old=np.zeros(self.mesh.ncells+1)
 
         #Saving values for film
-        #ex_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))
+        #ex_film=np.zeros((self.nsteps()+1, self.mesh.ncells+1))
 
         #Fourier transform
         ex_k1=np.zeros(self.nsteps()+1)
@@ -51,15 +55,13 @@ class FDTD:
 
         #Standard Deviation
         std_e=np.zeros(self.mesh.ncells+1)
+        #std_e_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))    
         if Computation_Method == 'SFDTD':
             std_h=np.zeros(self.mesh.ncells)
             std_e_old=np.zeros(self.mesh.ncells+1)
-            
-
-        #std_e_film=np.zeros((self.nsteps()+1,self.mesh.ncells+1))    
 
         if Computation_Method == 'MFDTD':
-            ca, cb, cc = self.mesh.cellsproperties()
+            ca, cb, cc = self.mesh.cellsproperties(distribution)
         else:    
             ca, cb, cc = self.mesh.materials()
 
@@ -68,7 +70,7 @@ class FDTD:
         for time_step in range(self.nsteps()+1):
             ex_old=copy.deepcopy(ex)
 
-            ex[self.pulse.k_ini] += 0.5 * self.pulse.pulse(time_step)  
+            ex[self.pulse.k_ini] += self.pulse.pulse(time_step)  
 
             ex[1:-1] = ca[1:-1] * ex[1:-1] + cb[1:-1] * (hy[:-1] - hy[1:])
             
@@ -79,28 +81,55 @@ class FDTD:
             ex_k1[time_step]=ex[k1]
             ex_k2[time_step]=ex[k2]
         
-
             self.boundarymur(ex,ex_old)  
 
             t= time_step + 1/2
-            hy[self.pulse.k_ini] += 0.25 * self.pulse.pulse(t) 
-            hy[self.pulse.k_ini-1] += 0.25 * self.pulse.pulse(t)  
+            hy[self.pulse.k_ini] += 0.5 * self.pulse.pulse(t) 
+            hy[self.pulse.k_ini-1] += 0.5 * self.pulse.pulse(t)  
              
-
             hy[:] = hy[:] + cc * (ex[:-1] - ex[1:])
             
-            
-
             if Computation_Method == 'SFDTD':
                 self.Include_SFDTD_Analysis(std_h,std_e,ex_old,hy,std_e_old)
                 std_e_k1[time_step]=std_e[k1]
                 std_e_k2[time_step]=std_e[k2]
                 #std_e_film[time_step][:]=std_e[:]
 
-        return ex_k1, ex_k2, std_e_k1, std_e_k2, ex, np.power(std_e ,2) #ex_film, np.power(std_e_film ,2)
+        return ex_k1, ex_k2, std_e_k1, std_e_k2, ex, np.power(std_e ,2)
 
 
-   
+
+def draw_samples_from_distribution(mu: float, sigma:float, 
+                                   n_samples: int, distribution: str):
+    any_negative = True
+    if distribution == "gaussian":
+        while any_negative:
+            samples = np.random.normal(mu, sigma, n_samples)
+            any_negative = np.any(samples < 0)
+            if any_negative == False:
+                break
+            
+    elif distribution == "uniform":
+        a = mu - np.sqrt(3) * sigma
+        b = mu + np.sqrt(3) * sigma
+        while any_negative:
+            samples = np.random.uniform(a, b, n_samples)
+            any_negative = np.any(samples < 0)
+            if any_negative == False:
+                break
+
+    elif distribution == "gumbel":
+        location = mu - 0.57721 * (np.sqrt(6)/np.pi) * sigma
+        scale = np.sqrt(6) * sigma / np.pi
+        while any_negative:
+            samples = np.random.gumbel(location, scale, n_samples)
+            any_negative = np.any(samples < 0)
+            if any_negative == False:
+                break
+
+    return samples
+
+
 
 class MonteCarlo:
     def __init__(self, mesh, pulse, time, mc_steps):
@@ -111,35 +140,79 @@ class MonteCarlo:
         self.mc_steps=mc_steps
         self.n_materials=self.mesh.par.num_materials
         self.materiales=self.mesh.par.materiales
-     
+
+
+    def nsteps(self):
+        return int(self.time / self.mesh.dt())   
         
-    def Gaussian_Pdf_layer(self):
-        rnd_epsilon_r=np.zeros((self.n_materials,self.mc_steps))       
-        rnd_sigma=np.zeros((self.n_materials,self.mc_steps))  
+
+    def Pdf_layer(self, distribution: str):
+        rnd_epsilon_r=np.zeros((self.n_materials, self.mc_steps))       
+        rnd_sigma=np.zeros((self.n_materials, self.mc_steps))  
 
         for i in range(self.n_materials):
-            rnd_epsilon_r[i]=np.random.normal(self.mesh.par.epsilon_r()[i], \
-                self.s_par.std_eps_r()[i],self.mc_steps)
-            rnd_sigma[i]=np.random.normal(self.mesh.par.sigma()[i], \
-                self.s_par.std_sigma()[i],self.mc_steps)
+            rnd_epsilon_r[i] = draw_samples_from_distribution(self.mesh.par.epsilon_r()[i], \
+                self.s_par.std_eps_r()[i], self.mc_steps, distribution)
+            
+            rnd_sigma[i] = draw_samples_from_distribution(self.mesh.par.sigma()[i], \
+                self.s_par.std_sigma()[i], self.mc_steps, distribution)
+            
+        return rnd_epsilon_r, rnd_sigma
     
 
-        return rnd_epsilon_r, rnd_sigma
-
-
-    def Layer_Method(self,k,rnd_epsilon_r, rnd_sigma):
+    def Layer_Method(self, k, distribution: str):
         ncells=self.mesh.ncells
-        
-        for i in range(self.n_materials):
-            self.materiales[i][0]=rnd_epsilon_r[i][k]
-            self.materiales[i][1]=rnd_sigma[i][k]
+        rnd_epsilon_r, rnd_sigma = self.Pdf_layer(distribution)
 
-        malla=Mesh(ncells,self.mesh.ddx,Materials(self.materiales),self.s_par)
+        aux_materiales = copy.deepcopy(self.materiales)
+
+        for i in range(self.n_materials):
+            aux_materiales[i][0]=rnd_epsilon_r[i][k]
+            aux_materiales[i][1]=rnd_sigma[i][k]
+
+        malla = Mesh(ncells, self.mesh.ddx, Materials(aux_materiales), self.s_par)
         ex_k1, ex_k2, _, _, ex, _= FDTD(malla, self.pulse, self.time).FDTDLoop('FDTD')
 
         return ex_k1, ex_k2, ex
 
-  
+
+    def MC_FDTD_Efield(self, layer_or_cell: str, distribution: str):
+
+        ex_avg=np.zeros(self.nsteps()+1)
+        ex_var=np.zeros(self.nsteps()+1)
+
+        if layer_or_cell == "layer":
+            for k in range(self.mc_steps):
+                ex = self.Layer_Method(k, distribution)[0]
+                ex_avg += ex  
+                ex_var += np.power(ex,2)
+
+                if k%100==0:
+                    print(k)
+
+        elif layer_or_cell == "cell":
+            for k in range(self.mc_steps):
+                ex = FDTD(self.mesh, self.pulse, 
+                            self.time).FDTDLoop('MFDTD', distribution)[0]
+                ex_avg += ex  
+                ex_var += np.power(ex,2)
+
+                if k%100==0:
+                    print(k)
+
+        coef_std= (self.mc_steps)/(self.mc_steps-1)
+        ex_avg = ex_avg / self.mc_steps
+        ex_var = (ex_var /(self.mc_steps-1)) - coef_std * (np.power(ex_avg,2))
+        ex_var[ex_var < 0] = 0
+
+        try:
+            std_ex = np.sqrt(ex_var)
+        except RuntimeWarning:
+            print("Negative value")
+        
+        return ex_avg, ex_var, std_ex
+
+
     def M_FDTD(self,layer_or_cell):
         
         nsteps=FDTD(self.mesh, self.pulse, self.time).nsteps()
@@ -159,9 +232,9 @@ class MonteCarlo:
         #E auxiliar FFT
         void=[[1,0, self.mesh.par.start_m()[0], self.mesh.par.end_m()[-1]]]
         malla_aux=Mesh(ncells, self.mesh.ddx, Materials(void), self.s_par)
-        ex2_k1, ex2_k2, _, _, _,_=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('FDTD')       
+        ex2_k1, ex2_k2, _, _, _,_,_,_=FDTD(malla_aux, self.pulse, self.time).FDTDLoop('FDTD')       
 
-        ex_k1, ex_k2,_,_,_,_=FDTD(self.mesh, self.pulse, self.time).FDTDLoop('FDTD')
+        ex_k1, ex_k2,_,_,_,_,_,_=FDTD(self.mesh, self.pulse, self.time).FDTDLoop('FDTD')
 
         freq =  Utilities().FFT(ex_k1,ex2_k1,ex_k2,ex2_k2,self.time)[2]
 
@@ -219,52 +292,9 @@ class MonteCarlo:
         R_std = np.sqrt((R_sum2 /(self.mc_steps-1)) - coef_std * (np.power(R_avg,2)))
         T_std = np.sqrt((T_sum2 /(self.mc_steps-1)) - coef_std * (np.power(T_avg,2)))
         
-
         return R_avg, T_avg, R_std, T_std, ex_avg, ex_var   
 
-    
-
-    def pdf(self,x,mu,var):
-        #Distribución eponencial
-        return (1.0/mu)*np.exp(-(1.0/mu)*x)
-
-    def Metropolis(self,delta,markov_0):
-        n=self.mc_steps
-        #Valores medios
-        eps_r=self.mesh.par.epsilon_r()
-        sigma=self.mesh.par.sigma()
-        #Desviaciones
-        std_eps=self.s_par.std_eps_r()
-        std_sigma=self.s_par.std_sigma()
-
-        rnd_eps=np.zeros((self.n_materials,n))
-        rnd_sigma=np.zeros((self.n_materials,n))
-        #Inicio de la cadena de Markov
-        for i in range(self.n_materials):
-            rnd_eps[i][0]=markov_0[i][0]
-            rnd_sigma[i][0]=markov_0[i][1]
-
-        for i in range(self.n_materials):
-            for k in range(n):
-                #Propuesta 
-                y=rnd_eps[i][k]+np.random.uniform(-delta[i][0],delta[i][0])
-                z=rnd_sigma[i][k]+np.random.uniform(-delta[i][1],delta[i][1])
-
-                if np.random.rand() < min(1,self.pdf(y,eps_r[i],std_eps[i]) \
-                    /self.pdf(rnd_eps[i][k],eps_r[i],std_eps[i])):
-                    rnd_eps[i][k+1]=y
-                else:
-                    rnd_eps[i][k+1]=rnd_eps[i][k]    
-
-                if np.random.rand() < min(1,self.pdf(z,sigma[i],std_sigma[i]) \
-                    /self.pdf(rnd_sigma[i][k],sigma[i],std_sigma[i])):
-                    rnd_sigma[i][k+1]=z
-                else:
-                    rnd_sigma[i][k+1]=rnd_sigma[i][k]      
-
-        return rnd_eps, rnd_sigma    
-
-
+       
 
 class Stochastic_FDTD:
     def __init__(self, mesh):
@@ -273,14 +303,12 @@ class Stochastic_FDTD:
                
     def StandardDeviation_H(self,std_h,std_e):
         std_h[:] = std_h[:] - 0.5 * (std_e[:-1] - std_e[1:])
-
     
     def StandardDeviation_E(self,std_h,std_e,e,h):   
         std_e[1:-1]=self.c1_StDe()[1:-1] * std_e[1:-1]+ \
                 self.c2_StDe()[1:-1] * (std_h[1:] - std_h[:-1]) + \
                 self.c3_StDe()[1:-1] * e[1:-1] + \
                 self.c4_StDe()[1:-1] * (h[:-1] - h[1:])               
-
 
     def BoundaryCondition(self,std_e,std_e_old):
         ncells, dt, ddx= self.mesh.ncells, self.mesh.dt(), self.mesh.ddx
@@ -290,8 +318,6 @@ class Stochastic_FDTD:
         std_e[0]=std_e_old[1] + c_bound * (std_e[1]-std_e_old[0])
         std_e[ncells]=std_e_old[ncells-1] + c_bound * \
              (std_e[ncells-1]-std_e_old[ncells])    
-
-
 
     def coef_aux(self):
         c_aux = np.empty(self.mesh.par.num_materials)
